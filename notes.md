@@ -234,6 +234,31 @@ B updates its alternate_chain variable
 B and C both see that the alternate chain is longer, and swap their main chain with alternate_chain
 
 
+Additional notes: 
+All peers continue mining based on the latest block in their main chain
+When do we clean up old chains in alternate_chain?
+
+
+Hypothetical scenario:
+
+A: 1,2,3,4
+B: 1,2,3,4
+C: 1,2,3,4
+
+B mines and sends out 5B
+A mines 5A and 6A in succession and sends out both (right before it sees 5B)
+
+
+A and C receive 5B.
+B and C receive 5A and 6A.
+
+A stores 5B in alternate_chain
+B stores 5A->6A in alternate_chain
+C stores 5A->6A in alternate_chain
+
+B and C see that length of alternate_chain is longer than their main chain and switch to it.
+
+
 
 
 
