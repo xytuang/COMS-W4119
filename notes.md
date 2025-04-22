@@ -107,6 +107,81 @@ Note: If B's initial 5B broadcast gets mixed into the stream, we can just ignore
 
 
 
+Longer chain scenario:
+
+We start with
+
+A: 1,2,3,4
+B: 1,2,3,4
+C: 1,2,3,4
+
+Suppose B mines 5B
+Suppose A manages to mine 5A
+A also mines 6A immediately afterwards (by coincidence)
+
+B sends 5B
+A sends 5A and 6A
+
+
+C gets 5B first and appends it to its blockchain
+
+At this point, the current state is
+
+A: 1,2,3,4,5A,6A
+B: 1,2,3,4,5B
+C: 1,2,3,4,5B
+
+C gets 5A. This is a fork, so it sends out a chain request
+C sees 6A but ignores it because it is waiting for a chain response
+B replies with 5B
+A replies with 6A
+
+In our protocol, the majority chain is
+
+1,2,3,4,5B
+
+This means A is forced to re-mine for the transactions in 5A and 6A.
+
+
+Edge case for majority at fork point failure:
+
+Suppose we have:
+
+A: 1,2,3,4,5A
+B: 1,2,3,4,5B
+C: 1,2,3,4,5C
+
+A, B and C all send out their versions of Block 5.
+
+They each send out their chain request.
+
+There is no majority vote as there are 3 different versions of Block 5.
+
+To handle this, look at the timestamps for each version of Block 5. Pick the earliest Block.
+
+
+Another edge case for majority at fork point failure: (I'm pretty sure this shouldn't happen because the fork happens when they each send out Block 5)
+
+Suppose we have:
+
+A: 1,2,3,4,5A,6A
+B: 1,2,3,4,5B
+C: 1,2,3,4,5C
+
+In the chain request,
+A sends out 6A
+B sends out 5B
+C sends out 5C
+
+There is no majority vote (split between 6A, 5B, 5C)
+
+To handle this, look at the timestamps for each block. Pick the earliest block.
+
+
+
+
+
+
 
 Q: Do we need a frontend?
 
