@@ -1,0 +1,301 @@
+### Project motivation and intended application:
+A secure distributed voting system using blockchain technology.
+
+The idea is that each user/node can cast their node securely and anonymously. In our system, each vote is going to be a transaction.
+Using blockchain technology, we can prevent tampering of vote counts, as blockchain protects against modification of old transactions ie. votes.
+
+### Transaction:
+We should have a Transaction class.
+
+Each transaction is an object that has the following fields:
+{
+    voter_id:   //public key of the node that created this transaction
+    vote:       //the intended target of the vote
+    timestamp:  //what time this vote was cast (optional?)
+}
+
+API:
+
+to_string() //converts a transaction to a string
+
+### Block:
+We should have a Block class.
+
+Each block contains a group of transactions (or a single transaction depending on how far we are into the project)
+{
+    block_id:   //a unique identifier for each block
+    nonce:      //a special value each node has to compute to create a valid hash
+    data:       //a string representation of all the transactions in this block?
+    prev_hash:  //the hash value of the previous block in the blockchain
+    hash:       //the hash value of this block
+}
+
+
+API:
+to_string() //converts a Block to a string. We can then encode the string format and send it over the network.
+
+from_string(block_string) //Converts a string representation of a Block to a Block object
+
+write_to_log() //writes this Block object to a log file. Should be useful for debugging
+
+
+### Peer/Node:
+We should have a Peer class.
+
+Each peer has to perform the following tasks:
+- Maintain a copy of blockchain
+- Create a valid block through mining
+- Droadcast the block to other peers
+- Verify a block and add it to the local blockchain
+- Deal with forks
+
+The blockchain is probably going to be a list of blocks. <- we need a lock for this
+We probably also need another variable to handle the possible forks. <- should contain length of a possible fork
+
+
+
+
+
+
+
+P2P Design:
+- Every peer knows the existence of every other peer(? ask TA)
+
+
+
+There's probably going to be some multi-threading here.
+- 1 thread to handle mining and sending <- let's call this miner_thread
+- 1 thread to handle receiving          <- let's call this receiver_thread
+- 1 thread to listen for connections    <- let's call this connection_thread
+
+We could spawn 2 child threads or just 1. If it's just 1 child thread, then the main thread will handle either mining and sending, or receiving
+
+miner_thread: <- Should this be an infinite loop?
+- Construct a Transaction
+- Mine for a valid hash for the given transaction
+- Construct a Block with the computed hash
+- Check if the hash of the most recently received block matches prev_hash in constructed Block
+- If yes, send out constructed Block. <- How does a Peer broadcast it's block? Through the tracker?
+- Else, go back to mining
+
+receiver_thread:
+The logic in this thread is going to be pretty tricky, mainly because of the need to handle forks.
+- Keep trying to receive blocks
+- On receiving a block
+    - Check if its valid block <- how do we check this?
+
+A sends B
+B is listening for any connection
+Once B receives from A, B creates a thread that handles this new message.
+Then this thread dies once this message has been handled
+
+
+connection_thread:
+- Used to communicate with tracker to get list of all peers in the network to send data to
+
+
+
+
+
+
+
+I'm still slightly unclear on how to handle a valid block because of forking. A valid block might still be malicious.
+If we immediately append a valid block to our local blockchain, we might lose the actual valid blocks or longest chain.
+We might use a separate data structure like a dictionary to hold all the possible forks.
+
+However, we also need to decide when to pick a valid fork (I haven't thought about the logic for this part).
+
+Also, another thing we need to figure out is how does each node perform its broadcast?
+
+API:
+
+mine_and_send()
+- Mining and sending logic is handled here
+
+receive()
+- Receiving logic is handle here
+
+
+
+
+### Tracker:
+The tracker is a special kind of peer. 
+It performs all the required tasks for a peer, but it must also keep track of the peers present in the network.
+
+On start up, the first node is automatically the tracker. (Can we assume that the tracker will never leave?)
+For subsequent nodes to join, they must broadcast their presence and wait for an ACK from the tracker before sending messages.
+On receiving the request to join, the tracker updates its own list of peers present.
+
+Handling nodes leaving the network is slightly tricky:
+If a node wants to leave the network, they must broadcast their intent to leave and wait for an ACK before leaving.
+
+The tracker must also handle the case where a node suddenly shuts down. 
+In this case, the tracker will remove a node from its list of peers present if it does not see a heartbeat signal from that node.
+
+
+Can use the return value of recv to see if a peer has left the network. recv returns nothing if a peer has left the network.
+
+
+
+
+
+network.py
+
+peer.py <- 1st peer
+
+
+### Demonstrating resilience to invalid transactions and modifications made to blocks:
+Create a node that sends malicious blocks periodically (add a flag to indicate bad peer)
+
+
+### Demo application
+
+I'm not sure about this section.
+
+
+
+Tracker
+
+Peers: A, B, C. D
+
+A wants to send a block
+
+A asks for list of peers in the network from tracker
+
+A -> B
+
+A -> C
+
+A -> D
+
+
+Questions:
+
+Is it ok for all the peers to talk to each directly, should we use intermediate peers for scaling?
+
+Peer gets list of other peers from tracker and sends it to those peers in the list.
+
+Will tracker go offline? <- a backup tracker?
+
+Tracker will not go offline. Bonus points for distributed tracker.
+
+When to do mining? Should mining only start when the application creates a transaction?
+
+No block, when there is no vote.
+
+Can also think about including several votes in one block instead of one block per vote. Dependent on specific application.
+
+New vote -> new mining process to get nonce -> new block -> send. Should have some verification to see if a valid block is created before sending it.
+
+Scenario to ask TA about: Handling forks:
+
+"hash1" ... "hash4" <- everyone's own blockchain
+
+{
+    block5 w "hash5" -> block6 w "hash7"
+    block5 w "hash6" -> block6 w "hash8" -> block7 w "hash9"
+}
+
+Client has: 1,2,3,4,5,6,7
+
+Block6 comes in
+
+Use a timestamp in each block in case current version of block in blockchain is not most updated.
+
+Client: 1 ... 6
+
+Only send a single block normally
+
+If you encounter a fork, should request for entire blockchain from all peers
+
+
+Peer A has 1,2,3,4
+
+Peer B has 1,2,3,4
+
+Peer C has 1,2,3,4
+
+A and B mine a Block 5 simultaneously. They both send at the same time <- forking
+
+C receives 2 block 5s.
+
+C stores both block 5s in a container
+
+{
+    a's block 5
+    b's block 5
+}
+
+
+
+A's blockchain: 1,2,3,4,5
+A receives b's block 5
+
+{
+    b's block 5
+}
+
+
+
+B's blockchain: 1,2,3,4,5,6
+B receives a's block 5
+
+{
+    a's block 5, a's block 6
+}
+
+
+A gets block 6 first. It sends it.
+
+B receives a's block 6. 
+
+
+A: 1,2,3,4,5,6
+
+A receives block 4
+
+
+everyone has 1,2,3,4
+
+attacker has 1,2,3,4,5
+
+
+
+1,2,3,4
+
+block 5 comes in
+
+{
+    5,6,7
+    5 some other node
+}
+
+Mining difficulty: 3 or 4 zeroes at the start of each hash?
+
+Is the frontend required? How do we integrate the frontend with our python code? Look into frontend stuff for python (not necessarily webapp)
+
+Are we using TCP? (probably!)
+
+
+When does mining occur?
+- User presses vote
+- Peer starts mining for a nonce
+- Once you find a valid nonce (created hash has 4 zeroes)
+- Peer sends the block to the entire network
+
+
+Block A w hash x -> Block B w hash y -> Block C w hash z
+
+Peer p (malicious) tries to modify Block B and sends out a new Block B
+1. This new Block B is instantly rejected because it is an old block
+
+2. If p sends out a malicious Block D
+q voted for some candidate <- example of malicious new block.
+
+
+
+API:
+
+create() //creates a block
+
+get_votes() //sends information on votes to frontend
