@@ -179,6 +179,61 @@ To handle this, look at the timestamps for each block. Pick the earliest block.
 
 
 
+LONGEST CHAIN RULE:
+Tbh, I think this is easier to implement
+
+We start with
+
+A: 1,2,3,4
+B: 1,2,3,4
+C: 1,2,3,4
+
+A mines and broadcasts 5A
+B mines and broadcasts 5B
+
+C receives 5A and appends it to its chain
+
+At this point, the current state is
+
+A: 1,2,3,4,5A
+B: 1,2,3,4,5B
+C: 1,2,3,4,5A
+
+C receives 5B and stores it in a separate alternate_chain variable
+
+{
+    5B
+}
+
+A receives 5B and stores it in a separate alternate_chain variable:
+
+{
+    5B
+}
+
+B receives 5A and stores it in a separate alternate_chain variable:
+
+{
+    5A
+}
+
+A mines and broadcasts 6A
+
+C updates its alternate_chain variable
+
+{
+    5A -> 6A
+}
+
+B updates its alternate_chain variable
+
+{
+    5A -> 6A
+}
+
+B and C both see that the alternate chain is longer, and swap their main chain with alternate_chain
+
+
 
 
 
