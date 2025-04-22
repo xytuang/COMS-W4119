@@ -53,11 +53,6 @@ The blockchain is probably going to be a list of blocks. <- we need a lock for t
 We probably also need another variable to handle the possible forks. <- should contain length of a possible fork
 
 
-
-
-
-
-
 P2P Design:
 - Every peer knows the existence of every other peer(? ask TA)
 
