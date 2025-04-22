@@ -259,8 +259,37 @@ C stores 5A->6A in alternate_chain
 B and C see that length of alternate_chain is longer than their main chain and switch to it.
 
 
+Three-way fork with longest chain rule:
 
+A: 1,2,3,4
+B: 1,2,3,4
+C: 1,2,3,4
 
+A,B and C each mine and broadcast their own Block 5s.
+Each update their alternate_chain like so:
+A:
+{
+    5B
+    5C
+}
+
+B:
+{
+    5A
+    5C
+}
+
+C:
+{
+    5A
+    5B
+}
+
+No switching occurs here
+
+Suppose A mines and broadcasts 6A
+
+B and C update their main chain after receiving 6A
 
 
 Q: Do we need a frontend?
