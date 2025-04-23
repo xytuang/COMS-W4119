@@ -25,22 +25,22 @@ Block structure:
             transaction: // Transaction data, see the Transaction struct below
             nonce:       // The nonce that needs to be solved for to mine a block
             prev_hash:   // The hash of the previous block
-            hash:        // The hash of the current block
-        
-            signature:   // Signature over the data of the block
+            hash:        // The hash of the current block    
      }
 
 Transaction structure:
 
     {
+        sender_id: // The public key aka id of the sender
         timestamp: // Time the transaction was added to the chain
         data:      // Transaction data (e.g. a vote)
+        signature: // Signature over the data of the block
     }
 
 Peer Initiation:
 * When a peer joins the network, it connects to the tracker (based on the address and port passed as command line arguments) so the tracker knows that there is a new node in the network.
 
-* The peer also generates an RSA public-private key pair, used for signing and allowing others to verify the signature.
+* The peer also generates an RSA public-private key pair, used for signing and allowing others to verify the signature. The public ID will also serve as the node's ID.
 
 The peer will maintain a few different threads:
 
@@ -61,11 +61,11 @@ The peer will maintain a few different threads:
 
 * Main thread to handle create requests
     * When the application calls create(), then in the same application thread, the peer will mine a new block with the transaction data and add it to its chain.
+        * To form the transaction, sign the transaction data with the private key.
         * Note that it is possible for it to receive a new block and add it to the chain before it finishes mining. So during the mining process it should periodically check to see if the block has already been mined, and if so, it should restart the mining process.
 
         * Mining will be finding a nonce such that the hash over all the data begins with 4 zeroes.
 
-        * After the nonce has been calculated, a signature over the block data will be calculated using the private key.
 
     * After it adds the block to its chain, it will connect to the tracker to get a list of all the peers in the P2P network.
 
