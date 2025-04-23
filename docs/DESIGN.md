@@ -1,46 +1,46 @@
-===Connection Method===
+
+**Connection Method**
 
 * We will use TCP sockets to communicate between nodes in the network so we don't need to worry about data corruption, dropped packets, and out-of-order packets.
 
 
-===Tracker===
+**Tracker**
 
 * The tracker's main thread will be responsible for listening to any incoming socket connections.
 
-* When a peer connects to the tracker, it will spin up a new thread dedicated to the peer's connection.
+* When a peer connects to the tracker, it will spin up a new thread dedicated to the peer's connection since it will need to maintain multiple peer connections at once.
     * Adds this peer to some global list
     * Each thread listens for a request from the peer to send the list of nodes so that the peer can know who to broadcast any new mined blocks to.
-    * Message/serialization format: NODES\n<IP Address>,Port <IP Address>,Port <IP Address>,Port...\n
+    * Message/serialization format: NODES\n{IPAddress},{Port} {IP Address},{Port} {IP Address},{Port}...\n
     * This thread should also detect when a connection has closed -- could be done by checking whether the return of recv() is None.
 
-===Peer===
+**Peer**
 
 The peer is responsible for maintaining its own copy of the blockchain, mining new nodes, and broadcasting them to its neighbors. The blockchain is a list of blocks, and will need a lock to ensure synchronization across different threads.
 
 Block structure:
 
-{
-    id:          // Block ID
-    transaction: // Transaction data, see the Transaction struct below
-    nonce:       // The nonce that needs to be solved for to mine a block
-    prev_hash:   // The hash of the previous block
-    hash:        // The hash of the current block
-
-    signature:   // Signature over the data of the block
-}
+    {
+            id:          // Block ID
+            transaction: // Transaction data, see the Transaction struct below
+            nonce:       // The nonce that needs to be solved for to mine a block
+            prev_hash:   // The hash of the previous block
+            hash:        // The hash of the current block
+        
+            signature:   // Signature over the data of the block
+     }
 
 Transaction structure:
 
-{
-    timestamp: // Time the transaction was added to the chain
-    data:      // Transaction data (e.g. a vote)
-}
+    {
+        timestamp: // Time the transaction was added to the chain
+        data:      // Transaction data (e.g. a vote)
+    }
 
+Peer Initiation:
 * When a peer joins the network, it connects to the tracker (based on the address and port passed as command line arguments) so the tracker knows that there is a new node in the network.
 
 * The peer also generates an RSA public-private key pair, used for signing and allowing others to verify the signature.
-
-* Forks will be resolved by majority vote
 
 The peer will maintain a few different threads:
 
@@ -57,7 +57,7 @@ The peer will maintain a few different threads:
 
     * If the block is valid and there is no fork, then we add it to the current chain.
 
-    * If there is a fork (when our current chain already has the block ID of a valid incoming block), then we have to get a list of all the peers from the tracker, and then request the most recent block on the chain from each pair and take the majority vote as the one we actually want to use for our chain.
+    * If there is a fork (when our current chain already has the block ID of a valid incoming block), then we have to get a list of all the peers from the tracker, and then request the most recent block on the chain from each peer and take the majority vote as the one we actually want to use for our chain.
 
 * Main thread to handle create requests
     * When the application calls create(), then in the same application thread, the peer will mine a new block with the transaction data and add it to its chain.
@@ -72,7 +72,7 @@ The peer will maintain a few different threads:
     * It will loop through all the peers and send the block and the peer's public key to each one of them.
         * We need locking between this part and the receiving thread, since the receiving thread could be temporarily connected to the same peer that the node is currently trying to send to.
 
-===Application===
+**Application**
 
 The application will be a voting app that allows users to leverage blockchain for a more tamper-proof voting system.
 
