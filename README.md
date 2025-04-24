@@ -24,6 +24,7 @@ sudo apt-get install build-essential libssl-dev libffi-dev \
 ```
 
 **Installation**
+
 Once dependencies are installed, run the command below.
 
 ```code
