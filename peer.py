@@ -12,7 +12,6 @@ class Peer:
 
         self.send_thread
         self.receive_thread
-        self.process_thread
         self.mine_thread
 
         self.log_file
@@ -21,9 +20,6 @@ class Peer:
         pass
     
     def handle_receive(self):
-        pass
-
-    def handle_process(self):
         pass
 
     def handle_mine(self):
