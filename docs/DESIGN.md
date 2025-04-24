@@ -10,6 +10,7 @@
 
 * When a peer connects to the tracker, it will spin up a new thread dedicated to the peer's connection since it will need to maintain multiple peer connections at once.
     * Adds this peer to some global list
+    * At thread initialization, the tracker first waits for the peer to send a join message with the port the peer will be listening for other peers at. (e.g. JOIN\n{Port No.}\n)
     * Each thread listens for a request from the peer to send the list of nodes so that the peer can know who to broadcast any new mined blocks to.
     * Message/serialization format: NODES\n{IPAddress},{Port} {IP Address},{Port} {IP Address},{Port}...\n
     * This thread should also detect when a connection has closed -- could be done by checking whether the return of recv() is None.
@@ -38,14 +39,14 @@ Transaction structure:
     }
 
 Peer Initiation:
-* When a peer joins the network, it connects to the tracker (based on the address and port passed as command line arguments) so the tracker knows that there is a new node in the network.
+* When a peer joins the network, it connects to the tracker (based on the address and port passed as command line arguments) so the tracker knows that there is a new node in the network. The peer sends a message to the tracker with the port it will listen on so peers know how to connect (e.g. JOIN\n{Port No.}\n).
 
 * The peer also generates an RSA public-private key pair, used for signing and allowing others to verify the signature. The public ID will also serve as the node's ID.
 
 The peer will maintain a few different threads:
 
 * Listening/Receiving thread to receive blocks from other nodes
-    * Continuously polling non-blocking accept, grabbing a lock before accept to ensure that nothing gets sent to the peer its connected to in the other thread (see the last bullet of "Maint thread to handle create requests).
+    * Continuously polling non-blocking accept, grabbing a lock before accept to ensure that nothing gets sent to the peer its connected to in the other thread (see the last bullet of "Main thread to handle create requests).
 
     * When a peer connects, then there are two possibilities:
         * One is to request the most recent block on the chain to help resolve forks
