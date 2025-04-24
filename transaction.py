@@ -1,13 +1,14 @@
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import serialization
 
 class Transaction:
     def __init__(self, sender, timestamp, data, signature=None):
         """
 
         Args:
-            sender (string): The peer that created this transaction. We need this so we can get the public key of the sender
-            timestamp (float) Time at which transaction was created. Use time.time?
+            sender (bytes): The byte representation of the public_key of the peer that created this transaction. We need this for verification
+            timestamp (float) Time at which transaction was created.
             data (string): Data for this particular transaction. Can be "vote for X" or something
             signature (bytes, optional): The signature for this transaction. Defaults to None.
         """
@@ -18,12 +19,12 @@ class Transaction:
 
     def to_string(self, with_signature=True):
         transaction_string = ""
-        transaction_string += f"sender:{self.sender}\n"
+        transaction_string += f"sender:{self.sender.decode()}\n"
         transaction_string += f"timestamp:{self.timestamp}\n"
         transaction_string += f"data:{self.data}\n"
 
-        if with_signature:
-            transaction_string += f"signature:{self.signature}\n"
+        if with_signature and self.signature:
+            transaction_string += f"signature:{self.signature.hex()}\n"
         
         return transaction_string
 
@@ -51,7 +52,7 @@ class Transaction:
             A signature in bytes for this transaction
         """
         transaction_bytes = self.to_bytes(False)
-        signature = private_key.sign(
+        self.signature = private_key.sign(
             transaction_bytes,
             padding.PSS(
                 mgf=padding.MGF1(hashes.SHA256()),
@@ -59,11 +60,8 @@ class Transaction:
             ),
             hashes.SHA256()
         )
-        self.signature = signature
-
-        
     
-    def verify(self, public_key):
+    def verify(self):
         """
         Checks if this is a valid transaction by comparing its signature and the signature generated using the public key
 
@@ -73,8 +71,9 @@ class Transaction:
         Returns:
             True if valid, False otherwise
         """
+        # converts the byte representation in self.sender into a RSAPublicKey object
+        public_key = serialization.load_pem_public_key(self.sender)
         transaction_bytes = self.to_bytes(False)
-
         # verify raises an InvalidSignature Exception if the verification fails
         try:
             public_key.verify(
