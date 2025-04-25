@@ -70,13 +70,23 @@ The peer will maintain a few different threads:
 
     * After it adds the block to its chain, it will connect to the tracker to get a list of all the peers in the P2P network.
 
-    * It will loop through all the peers and send the block and the peer's public key to each one of them.
+    * It will loop through all the peers and serialize + send the block and the peer's public key to each of the peers.
         * We need locking between this part and the receiving thread, since the receiving thread could be temporarily connected to the same peer that the node is currently trying to send to.
 
 **Application**
 
 The application will be a voting app that allows users to leverage blockchain for a more tamper-proof voting system.
 
-The application will allow the user to specify the category to vote on, and that counts as a transaction and triggers the node to mine a new block according to the protocol described above.
+The application will allow a user to make two types of transactions:
 
-Aggregating the results is as simple as traversing the blockchain and summing together the results for each category.
+1) Post a poll with: {Poll ID, Poll name, [category 1, category 2, ...]}. Poll ID can be a randomly generated GUID.
+
+2) Vote on a posted poll, with the Poll ID as input.
+
+When submitting a transaction that votes on a poll, the block is only valid if it corresponds to an existing poll. Otherwise the block will be discarded by the peers.
+
+Each user will be identified by their public key.
+
+To aggregate the results, iterate through the blockchain and aggregate the poll results across the poll IDs. This will effectively be the display (or console output) returned to the user.
+
+If we have time, we would like to make a GUI that offers the user a more intuitive way of creating polls, voting on polls, and viewing poll results.
