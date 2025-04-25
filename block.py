@@ -1,3 +1,6 @@
+import hashlib
+import json
+
 class Block:
     def __init__(self, _id, data, nonce, prev_hash, _hash):
         """
@@ -17,8 +20,38 @@ class Block:
         self.hash = _hash
 
     
-    def is_valid(self):
-        pass
+    def is_valid(self, difficulty):
+        """
+        Verifies whether this block is valid by
+            1. recomputing the hash based on the block's contents
+            2. checking if the hash starts with the required numebr of zeros (4 in our design)
+        
+        Args:
+            difficulty (int) : number of leading zeros required for a hash
+            
+        Returns:
+            bool: True if the block is valid; False if not
+        """
+        # This is concatenating the contents of the block to construct the same string used for mining
+        block_string = (
+            f"{self.id}"
+            f"{self.data}"
+            f"{self.nonce}"
+            f"{self.prev_hash}"
+        )
+        
+        # use the reconstructed string to recompute the hash
+        recomputed_hash = hashlib.sha256(block_string.encode()).hexdigest()
+        
+        # check if the recomputed hash equals to the stoed hash inside the block
+        if recomputed_hash != self.hash:
+            return False
+        
+        # then, check if that hash starts with enough zeros
+        return self.hash.startswith('0' * difficulty)
+        
+        
+        
     
     @staticmethod
     def mine(_id, data, prev_hash):
