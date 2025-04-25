@@ -129,11 +129,39 @@ class Block:
     @staticmethod
     def from_bytes(message_body):
         """
-        Returns a Block object from message_body (which is in bytes)
+        basically the reverse of to_bytes(), rebuild the Block object received over the network
+        
+        Returns:
+            Block object from message_body (which is in bytes)
+        
         Args:
             message_body (bytes): The byte representation of a block
         """
-        pass
+        
+        try:
+            # convert bytes to dict
+            json_str = message_body.decode()
+            block_dict = json.loads(json_str)
+            
+            # get all the stuff from the block
+            block_id = block_dict['id']
+            data = block_dict['data']
+            nonce = block_dict['nonce']
+            prev_hash = block_dict['prev_hash']
+            block_hash = block_dict['hash']
+            
+            # return the block obj
+            return Block(
+                _id = block_id,
+                data = data,
+                nonce = nonce,
+                prev_hash = prev_hash,
+                _hash = block_hash
+            )
+            
+        except (json.JSONDecodeError, KeyError, UnicodeDecodeError) as e:
+            raise ValueError(f"Error parsing block from message: {e}")
+            
 
 
 
