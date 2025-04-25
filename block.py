@@ -51,10 +51,8 @@ class Block:
         return self.hash.startswith('0' * difficulty)
         
         
-        
-    
     @staticmethod
-    def mine(_id, data, prev_hash):
+    def mine(_id, data, prev_hash, difficulty = 4):
         """
         Finds a nonce given _id, data and prev_hash, and the hash for that nonce
 
@@ -66,7 +64,31 @@ class Block:
         Returns:
             A new Block object
         """
-        pass
+        nonce = 0
+        
+        # inifite loop until it finds a nonce that produces a valid hash
+        while True:
+            # construct the string to hash
+            block_string = (
+            f"{_id}"
+            f"{data}"
+            f"{nonce}"
+            f"{prev_hash}"
+        )            
+        
+            # use the constructed string to compute the hash
+            block_hash = hashlib.sha256(block_string.encode()).hexdigest()
+            
+            # check if hash meets the difficulty level
+            if block_hash.startswith('0' * difficulty):
+                return Block( # return the Block object if found a valid hash
+                    _id = _id,
+                    data = data,
+                    nonce = nonce,
+                    prev_hash = prev_hash,
+                    _hash = block_hash
+                )
+            nonce += 1 # keep finding if hash is not valid        
     
     def to_bytes(self):
         """
