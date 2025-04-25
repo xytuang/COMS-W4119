@@ -92,15 +92,39 @@ class Block:
     
     def to_bytes(self):
         """
-        Converts this block to byte representation
+        Converts this block to byte representation for network transmission
+        
+        Returns:
+            bytes: byte represenatation of this block
         """
-        pass
+        # use a dict to represent the block and convert it to json str
+        block_dict = {
+            'id': self.id,
+            'data': self.data,
+            'nonce': self.nonce,
+            'prev_hash': self.prev_hash,
+            'hash': self.hash
+        }
+        
+        json_str = json.dumps(block_dict)
+        
+        return json_str.encode()
+        
     
     def to_string(self):
         """
         Converts this block to string representation. Useful for debugging
+        
+        Returns:
+            human-readable string rep of the block
         """
-        pass
+        return (
+            f"Block #{self.id}\n"
+            f"Data: {self.data}\n"
+            f"Nonce: {self.nonce}\n"
+            f"Prev Hash: {self.prev_hash}\n"
+            f"Hash: {self.hash}"
+        )
 
     @staticmethod
     def from_bytes(message_body):
