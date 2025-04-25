@@ -49,16 +49,17 @@ The peer will maintain a few different threads:
     * Continuously polling non-blocking accept, grabbing a lock before accept to ensure that nothing gets sent to the peer its connected to in the other thread (see the last bullet of "Main thread to handle create requests).
 
     * When a peer connects, then there are two possibilities:
-        * One is to request the most recent block on the chain to help resolve forks
+        * One is to request the most recent block on the chain to help resolve forks. In this case all the peer has to do is serialize and send the most recent block to satisfy the request.
         * The other is a request to add a block to the node's current chain.
 
-    * The node should receive a public key from its peer, which it'll use to verify the signature embedded within the block as an extra layer of verification.
+    * For the latter possibility:
+        * The node should receive a public key from its peer, which it'll use to verify the signature embedded within the block as an extra layer of verification.
 
-    * The node will then recompute the hash over the data to ensure that the block is valid.
+        * The node will then recompute the hash over the data to ensure that the block is valid.
 
-    * If the block is valid and there is no fork, then we add it to the current chain.
+        * If the block is valid and there is no fork, then we add it to the current chain.
 
-    * If there is a fork (when our current chain already has the block ID of a valid incoming block), then we have to get a list of all the peers from the tracker, and then request the most recent block on the chain from each peer and take the majority vote as the one we actually want to use for our chain.
+        * If there is a fork (when our current chain already has the block ID of a valid incoming block), then we have to get a list of all the peers from the tracker, and then request the most recent block on the chain from each peer and take the majority vote as the one we actually want to use for our chain.
 
 * Main thread to handle create requests
     * When the application calls create(), then in the same application thread, the peer will mine a new block with the transaction data and add it to its chain.
