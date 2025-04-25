@@ -16,13 +16,16 @@ def delete_peer(peer_addr):
     del active_peers[peer_addr]
     active_peers_lock.release()
 
-def serialize_active_peers():
+def serialize_active_peers(curr_peer_addr):
     active_peers_lock.acquire()
 
     res = ['PEERS', '\n']
 
     exist_active_peers = False
     for peer_addr in active_peers:
+        # Skip the peer you're sending to
+        if peer_addr == curr_peer_addr:
+            continue
         peer = active_peers[peer_addr]
         exist_active_peers = True
         res.append(peer.addr[0]) # IP address
@@ -36,6 +39,8 @@ def serialize_active_peers():
         res.append('\n')
 
     active_peers_lock.release()
+
+    print(res)
 
     return "".join(res)
 
@@ -65,7 +70,7 @@ def process_peer_requests(peer):
         if header != "LIST":
             break
 
-        active_peers_str = serialize_active_peers()
+        active_peers_str = serialize_active_peers(peer.addr)
 
         print("Sending peers:", active_peers_str)
 
@@ -80,7 +85,7 @@ def process_peer_requests(peer):
 
     print("Disconnected peer at " + str(peer.addr))
     
-class Peer:
+class PeerConn:
     def __init__(self):
         self.socket = None
         self.addr = None
@@ -99,7 +104,7 @@ class Tracker:
         while True:
             peer_socket, addr = self.tracker_sock.accept()
 
-            peer = Peer()
+            peer = PeerConn()
             peer.addr = addr
             peer.socket = peer_socket
 
