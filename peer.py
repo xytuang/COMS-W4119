@@ -117,11 +117,13 @@ class Peer:
                 data = self.rcv_buffer.popleft()
 
             self.rcv_buffer_lock.release()
+
             if data == None:
                 continue
 
             if data["type"] == "BLOCK":
                 print(data)
+
                 _id = data["tag"]
                 block = data["payload"]
 
@@ -180,6 +182,7 @@ class Peer:
                         
                         with self.state_lock:
                             self.state = State.MINING
+
             else:
                 print("rcv_buffer: got unsupported data type, ignoring")
 
