@@ -8,7 +8,7 @@ class Block:
 
         Args:
             _id (int): Block ID
-            data (string): Data for this block
+            data (Transaction[]): Data for this block
             nonce (int): the number that was mined, such that the hash criteria is met
             prev_hash (int): The hash number of this previous block
             _hash (int): The hash number of this block
@@ -32,10 +32,12 @@ class Block:
         Returns:
             bool: True if the block is valid; False if not
         """
+        # Convert all transactions into string
+        data_str = "\n".join(list(map(str, self.data)))
         # This is concatenating the contents of the block to construct the same string used for mining
         block_string = (
             f"{self.id}"
-            f"{self.data}"
+            f"{data_str}"
             f"{self.nonce}"
             f"{self.prev_hash}"
         )
@@ -48,7 +50,16 @@ class Block:
             return False
         
         # then, check if that hash starts with enough zeros
-        return self.hash.startswith('0' * difficulty)
+        if not (len(self.hash) < difficulty or self.hash.startswith('0' * difficulty)):
+            return False
+        
+        for transaction in self.data:
+            valid_signature = transaction.verify()
+
+            if not valid_signature:
+                return False
+
+        return True
         
         
     @staticmethod
@@ -118,6 +129,7 @@ class Block:
         Returns:
             human-readable string rep of the block
         """
+        data_str = "\n".join(list(map(str, self.data)))
         return (
             f"Block #{self.id}\n"
             f"Data: {self.data}\n"

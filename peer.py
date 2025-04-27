@@ -13,7 +13,7 @@ from enums import State
 MAX_QUEUED_CONNECTIONS = 5
 
 class Peer:
-    def __init__(self, tracker_addr, tracker_port, listening_port, transaction_file=None):
+    def __init__(self, tracker_addr, tracker_port, listening_port, difficulty=4, transaction_file=None):
         self.listening_port = listening_port
         self.tracker_addr = tracker_addr
         self.tracker_port = tracker_port
@@ -45,17 +45,10 @@ class Peer:
         self.public_key = self.private_key.public_key()
 
         self.blockchain = Blockchain()
+        self.blockchain_lock = threading.Lock()
 
-        
-        # self.outgoing_messages
-        # self.incoming_messages
-        # self.transactions
+        self.difficulty = difficulty
 
-        # self.send_thread
-        # self.receive_thread
-        # self.mine_thread
-
-        # self.log_file
 
     def process_peer_connections(self, listening_sock):
         print("Started listening thread.")
@@ -77,8 +70,10 @@ class Peer:
             elif header_arr[0] == "GET-BLOCK":
                 # TODO: Would want to grab the block ID from the header and use it to find the block on our chain to send back
                 # TODO: Replace the dummy logic here with the above
-                dummy_block = Block(_id=1, data="dummy", nonce=100, prev_hash=2, _hash=1)
-                self.send_block_to_peer(block, "EXIST", peer_socket)
+                tag = header_arr[2]
+                with self.blockchain_lock:
+                    requested_block = self.blockchain.get_block_by_id(tag)
+                self.send_block_to_peer(requested_block, "EXIST", tag, peer_socket)
             else:
                 print("Unsupported header type")
 
@@ -97,16 +92,31 @@ class Peer:
 
             if data["type"] == "BLOCK":
                 print(data)
-                # TODO: Put it on the chain and do all that verification mumbo-jumbo
-                fork = False # TODO: Add forking logic
-                if fork:
-                    # TODO: Send get block requests to all the peer nodes
+                _id = data["tag"]
+                block = data["payload"]
+                fork = False
 
-                    # Set state to wait-mode where all we are looking for are
-                    # get block responses
-                    peer_nodes_serialized = self.request_nodes_from_tracker()
-                    peer_nodes = self.parse_serialized_nodes()
-                    peer_blocks = self.request_block_from_all_peers(peer_nodes, 100)
+                if not block.is_valid():
+                    continue
+
+                with self.blockchain_lock:
+                    latest_block = self.blockchain.get_latest_block()
+
+                    if not latest_block: # This peer does not have any blocks in its chain
+                        self.blockchain.add_block(block)
+                    elif latest_block._id < _id: # This is non-forking case
+                        if latest_block._hash != block.prev_hash:
+                            continue
+                        self.blockchain.add_block(block)
+                    else:
+                        # TODO: Send get block requests to all the peer nodes
+
+                        # Set state to wait-mode where all we are looking for are
+                        # get block responses
+                        peer_nodes_serialized = self.request_nodes_from_tracker()
+                        peer_nodes = self.parse_serialized_nodes(peer_nodes_serialized)
+                        peer_blocks = self.request_block_from_all_peers(peer_nodes, _id)
+
             else:
                 print("rcv_buffer: got unsupported data type, ignoring")
 
@@ -196,15 +206,6 @@ class Peer:
 
             dest_socket.close()
         self.send_lock.release()
-
-    def handle_send(self):
-        pass
-    
-    def handle_receive(self):
-        pass
-
-    def handle_mine(self):
-        pass
 
 if __name__ == '__main__':
     listening_port = int(sys.argv[1])
