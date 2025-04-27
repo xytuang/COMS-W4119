@@ -18,12 +18,12 @@ class Transaction:
         self.signature  = signature
 
     def to_string(self, with_signature=True):
-        transaction_string = f"{self.sender.decode()}"
-        transaction_string += f" {self.timestamp}"
-        transaction_string += f" {self.data}"
+        transaction_string = f"{self.sender.decode()}\n"
+        transaction_string += f"{self.timestamp}\n"
+        transaction_string += f"{self.data}\n"
 
         if with_signature and self.signature:
-            transaction_string += f" {self.signature.hex()}"
+            transaction_string += f"{self.signature.hex()}\n"
         
         return transaction_string
 
@@ -40,6 +40,32 @@ class Transaction:
         """
         transaction_string = self.to_string(with_signature)
         return transaction_string.encode()
+
+    @staticmethod
+    def from_string(txn_str):
+        parts = txn_str.split("\n")
+        
+        end_pub_key_idx = parts.index("-----END PUBLIC KEY-----")
+        sender_str = "\n".join(parts[1:end_pub_key_idx]).strip()
+
+        # there is an empty new line after the sender string, we skip it
+        timestamp_str = parts[end_pub_key_idx + 2].strip()
+        data_str = parts[end_pub_key_idx + 3].strip()
+        signature_str = parts[end_pub_key_idx + 4].strip()
+
+        # print(sender_str)
+        # print(timestamp_str)
+        # print(data_str)
+        # print(signature_str)
+
+        # Return the Transaction object
+        return Transaction(
+            sender = sender_str.encode(),
+            timestamp = float(timestamp_str),
+            data = data_str,
+            signature = bytes.fromhex(signature_str)
+        )
+
 
     def sign(self, private_key):
         """

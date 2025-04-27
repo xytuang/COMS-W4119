@@ -14,7 +14,7 @@ from transaction import Transaction
 MAX_QUEUED_CONNECTIONS = 5
 
 class Peer:
-    def __init__(self, tracker_addr, tracker_port, listening_port, difficulty=4, transaction_file=None):
+    def __init__(self, tracker_addr, tracker_port, listening_port, difficulty=4, vote_file=None):
         self.listening_port = listening_port
         self.tracker_addr = tracker_addr
         self.tracker_port = tracker_port
@@ -50,7 +50,7 @@ class Peer:
         self.blockchain = Blockchain()
         self.blockchain_lock = threading.Lock()
 
-        self.transactions = self.read_from_transaction_file(transaction_file)
+        self.votes = self.read_from_vote_file(vote_file)
 
         self.difficulty = difficulty
 
@@ -58,18 +58,17 @@ class Peer:
         self.mining_thread.start()
 
 
-    def read_from_transaction_file(self, transaction_file):
-        if not transaction_file:
+    def read_from_vote_file(self, vote_file):
+        if not vote_file:
             return []
 
-        transactions = []
-        with open(transaction_file, "r") as f:
+        votes = []
+        with open(vote_file, "r") as f:
             for line in f:
                 if line.strip():
-                    vote_target = line.split()
-                    transactions.append(vote_target)
-        
-        return transactions
+                    votes.append(line)
+        print("votes", votes)
+        return votes
 
     def public_key_to_bytes(self):
         public_key_bytes = self.public_key.public_bytes(
@@ -98,10 +97,16 @@ class Peer:
             elif header_arr[0] == "GET-BLOCK":
                 # TODO: Would want to grab the block ID from the header and use it to find the block on our chain to send back
                 # TODO: Replace the dummy logic here with the above
-                print(header_arr)
                 _id = int(header_arr[1])
                 with self.blockchain_lock:
                     requested_block = self.blockchain.get_block_by_id(_id)
+                    
+                    # If our chain is empty, create a fake block
+                    if not requested_block:
+                        fake_txn = Transaction(b"", time.time(), "")
+                        fake_txn.sign(self.private_key)
+                        requested_block = Block(0, [fake_txn], 0, 0, 0, time.time())
+
                 self.send_block_to_peer(requested_block, "EXIST", peer_socket)
             else:
                 print("Unsupported header type")
@@ -123,8 +128,8 @@ class Peer:
             if data["type"] == "BLOCK":
                 print(data)
 
-                _id = data["tag"]
                 block = data["payload"]
+                _id = block.id
 
                 if not block.is_valid(self.difficulty):
                     continue
@@ -133,12 +138,15 @@ class Peer:
                     latest_block = self.blockchain.get_latest_block()
 
                     if not latest_block: # This peer does not have any blocks in its chain
+                        print(f"added block {block.id} to chain")
                         self.blockchain.add_block(block)
-                    elif latest_block._id < _id: # This is non-forking case when received block comes after current last block in our chain
-                        if latest_block._hash != block.prev_hash:
+                    elif latest_block.id < _id: # This is non-forking case when received block comes after current last block in our chain
+                        if latest_block.hash != block.prev_hash:
                             continue
+                        print(f"added block {block.id} to chain")
                         self.blockchain.add_block(block)
-                    elif latest_block._id >= _id:
+                    elif latest_block.id >= _id:
+                        print("Forking")
                         block_at_fork = self.blockchain.get_block_by_id(_id)
                         if str(block_at_fork) == str(block): # We already have this block, just ignore it
                             continue
@@ -157,27 +165,28 @@ class Peer:
                         # Track the number of votes for each block variation via their hashes (basically a hash table)
                         hash_counts = {}
                         for peer_block in peer_blocks:
-                            hash_counts.setdefault(peer_block._hash, 0)
-                            hash_counts[peer_block._hash] += 1
+                            hash_counts.setdefault(peer_block.hash, 0)
+                            hash_counts[peer_block.hash] += 1
                         
                         max_count = max(hash_counts.values())
 
                         max_hashes = [key for key, value in hash_counts.items() if value == max_count]
                         max_hash = max_hashes[0]
-                        new_block = [blk for blk in peer_blocks if blk._hash == max_hash][0]
+                        new_block = [blk for blk in peer_blocks if blk.hash == max_hash][0]
 
                         # handle multiple majority votes
                         if len(max_hashes) > 1:
-                            max_blocks = [blk for blk in peer_blocks if blk._hash in max_hashes]
+                            max_blocks = [blk for blk in peer_blocks if blk.hash in max_hashes]
                             for blk in max_blocks:
                                 if blk.timestamp < new_block.timestamp:
                                     new_block = blk
 
                         # Swap blocks if needed
-                        if block_at_fork._hash != new_block._hash:
+                        if block_at_fork.hash != new_block.hash:
                             # Get the transactions that were lost after swap
                             dropped_transactions = self.blockchain.swap_block(new_block, self.public_key_to_bytes())
-                            self.transactions.extend(dropped_transactions)
+                            dropped_votes = [txn.data for txn in dropped_transactions]
+                            self.votes.extend(dropped_votes)
                         
                         with self.state_lock:
                             self.state = State.MINING
@@ -278,6 +287,7 @@ class Peer:
         """
         Mine for a block that contains a single transaction
         """
+        print("Start mining")
         nonce = 0
         current_txn = None
 
@@ -286,11 +296,11 @@ class Peer:
                 if self.state != State.MINING:
                     continue
 
-            if not self.transactions and not current_txn:
+            if not self.votes and not current_txn:
                 continue
 
             if not current_txn:
-                data = self.transactions.pop()
+                data = self.votes.pop()
                 public_key_bytes = self.public_key_to_bytes()
                 txn = Transaction(public_key_bytes, time.time(), data)
                 txn.sign(self.private_key)
@@ -298,40 +308,49 @@ class Peer:
             
             with self.blockchain_lock:
                 latest_block = self.blockchain.get_latest_block()
-                prev_hash = 0 if not latest_block else latest_block._hash
-                mine_id = 0 if not latest_block else latest_block._id + 1
+                prev_hash = 0 if not latest_block else latest_block.hash
+                mine_id = 0 if not latest_block else latest_block.id + 1
             
-
-            for i in range(100):
+            timestamp = time.time()
+            for _ in range(100):
                 nonce += 1
-                new_block = Block.mine(mine_id, [txn], prev_hash, nonce)
+                new_block = Block.mine(mine_id, [txn], prev_hash, nonce, timestamp, self.difficulty)
                 if new_block:
                     with self.blockchain_lock:
                         latest_block = self.blockchain.get_latest_block()
-                        if not latest_block or (latest_block._id == mine_id + 1):
+                        if not latest_block or (latest_block.id == mine_id + 1):
                             self.blockchain.add_block(new_block)
                         else:
                             break
                     self.broadcast_block_to_all_peers(new_block)
                     current_txn = None
                     nonce = 0
-                    break            
+                    break
+            time.sleep(0.1)            
 
 if __name__ == '__main__':
     listening_port = int(sys.argv[1])
     tracker_addr = sys.argv[2]
     tracker_port = int(sys.argv[3])
-    transaction_file = sys.argv[4]
 
-    peer = Peer(tracker_addr, tracker_port, listening_port, transaction_file)
+    difficulty = 4
+
+    if len(sys.argv) <= 5:
+        difficulty = int(sys.argv[4])
+    
+    vote_file = None
+    if len(sys.argv) <= 6:
+        vote_file = sys.argv[5]
+
+    peer = Peer(tracker_addr, tracker_port, listening_port, difficulty, vote_file)
     peer.send_join_message()
 
-    serialized_nodes = peer.request_nodes_from_tracker()
-    nodes = peer.parse_serialized_nodes(serialized_nodes)
-    print(nodes)
+    # serialized_nodes = peer.request_nodes_from_tracker()
+    # nodes = peer.parse_serialized_nodes(serialized_nodes)
+    # print(nodes)
 
-    dummy_block = Block(_id=1, data="dummy", nonce=100, prev_hash=2, _hash=1)
-    peer.broadcast_block_to_all_peers(dummy_block)
-    peer.request_block_from_all_peers(nodes, 100)
+    # dummy_block = Block(_id=1, data="dummy", nonce=100, prev_hash=2, _hash=1)
+    # peer.broadcast_block_to_all_peers(dummy_block)
+    # peer.request_block_from_all_peers(nodes, 100)
 
 

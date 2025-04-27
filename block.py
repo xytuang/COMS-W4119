@@ -1,5 +1,6 @@
 import hashlib
 import json
+from transaction import Transaction
 
 class Block:
     def __init__(self, _id=None, data=None, nonce=None, prev_hash=None, _hash=None, timestamp=None):
@@ -59,13 +60,14 @@ class Block:
             valid_signature = transaction.verify()
 
             if not valid_signature:
+                print("invalid signature")
                 return False
 
         return True
         
         
     @staticmethod
-    def mine(_id, data, prev_hash, nonce, timestamp, difficulty = 4):
+    def mine(_id, data, prev_hash, nonce, timestamp, difficulty):
         """
         Finds a nonce given _id, data and prev_hash, and the hash for that nonce
 
@@ -161,7 +163,9 @@ class Block:
             # get all the stuff from the block
             block_id = block_dict['id']
             data_str = block_dict['data']
-            data = data_str.split("\n")
+            data = [Transaction.from_string(data_str)]
+
+
 
             nonce = block_dict['nonce']
             prev_hash = block_dict['prev_hash']
