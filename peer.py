@@ -66,10 +66,8 @@ class Peer:
         with open(transaction_file, "r") as f:
             for line in f:
                 if line.strip():
-                    parts = line.split()
-                    assert len(parts) == 2, f"Should be two space-separated elements in line, got {len(parts)}: {parts}"
-                    assert parts[0].isdigit(), f"Time must be int, got {parts[0]}"
-                    transactions.append((int(parts[0]), parts[1]))
+                    vote_target = line.split()
+                    transactions.append(vote_target)
         
         return transactions
 
@@ -100,10 +98,11 @@ class Peer:
             elif header_arr[0] == "GET-BLOCK":
                 # TODO: Would want to grab the block ID from the header and use it to find the block on our chain to send back
                 # TODO: Replace the dummy logic here with the above
-                tag = header_arr[2]
+                print(header_arr)
+                _id = int(header_arr[1])
                 with self.blockchain_lock:
-                    requested_block = self.blockchain.get_block_by_id(tag)
-                self.send_block_to_peer(requested_block, "EXIST", tag, peer_socket)
+                    requested_block = self.blockchain.get_block_by_id(_id)
+                self.send_block_to_peer(requested_block, "EXIST", peer_socket)
             else:
                 print("Unsupported header type")
 
@@ -127,7 +126,7 @@ class Peer:
                 _id = data["tag"]
                 block = data["payload"]
 
-                if not block.is_valid():
+                if not block.is_valid(self.difficulty):
                     continue
 
                 with self.blockchain_lock:
@@ -322,8 +321,9 @@ if __name__ == '__main__':
     listening_port = int(sys.argv[1])
     tracker_addr = sys.argv[2]
     tracker_port = int(sys.argv[3])
+    transaction_file = sys.argv[4]
 
-    peer = Peer(tracker_addr, tracker_port, listening_port)
+    peer = Peer(tracker_addr, tracker_port, listening_port, transaction_file)
     peer.send_join_message()
 
     serialized_nodes = peer.request_nodes_from_tracker()
