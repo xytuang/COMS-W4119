@@ -1,8 +1,9 @@
 import hashlib
 import json
+from transaction import Transaction
 
 class Block:
-    def __init__(self, _id=None, data=None, nonce=None, prev_hash=None, _hash=None, timestamp=None):
+    def __init__(self, _id=None, txns=None, nonce=None, prev_hash=None, _hash=None, timestamp=None):
         """
         Creates a block
 
@@ -14,12 +15,24 @@ class Block:
             _hash (int): The hash number of this block
         """
         self.id = _id
-        self.data = data
+        self.txns = txns
         self.nonce = nonce
         self.prev_hash = prev_hash
         self.hash = _hash
         self.timestamp = timestamp
+    
+    def to_json(self, with_hash=True):
+        block_dict = {
+            "id": self.id,
+            "txns": [txn.to_json() for txn in self.txns],
+            "nonce": self.nonce,
+            "prev_hash": self.prev_hash,
+            "timestamp": self.timestamp
+        }
+        if with_hash:
+            block_dict["hash"] = self.hash
 
+        return block_dict
     
     def is_valid(self, difficulty):
         """
@@ -33,39 +46,36 @@ class Block:
         Returns:
             bool: True if the block is valid; False if not
         """
-        # Convert all transactions into string
-        data_str = "\n".join(list(map(str, self.data)))
         # This is concatenating the contents of the block to construct the same string used for mining
-        block_string = (
-            f"{self.id}"
-            f"{data_str}"
-            f"{self.nonce}"
-            f"{self.prev_hash}"
-            f"{self.timestamp}"
-        )
-        
+        block_bytes = self.to_bytes(False)
+
         # use the reconstructed string to recompute the hash
-        recomputed_hash = hashlib.sha256(block_string.encode()).hexdigest()
+        recomputed_hash = hashlib.sha256(block_bytes).hexdigest()
         
         # check if the recomputed hash equals to the stoed hash inside the block
         if recomputed_hash != self.hash:
+            print("recomputed hash", recomputed_hash)
+            print("own hash", self.hash)
+            print("recomputed hash not same as current hash")
             return False
         
         # then, check if that hash starts with enough zeros
         if not (len(self.hash) < difficulty or self.hash.startswith('0' * difficulty)):
+            print("does  not meet difficulty")
             return False
         
-        for transaction in self.data:
-            valid_signature = transaction.verify()
+        for txn in self.txns:
+            valid_signature = txn.verify()
 
             if not valid_signature:
+                print("invalid signature")
                 return False
 
         return True
         
         
     @staticmethod
-    def mine(_id, data, prev_hash, nonce, timestamp, difficulty = 4):
+    def mine(_id, txns, prev_hash, nonce, timestamp, difficulty):
         """
         Finds a nonce given _id, data and prev_hash, and the hash for that nonce
 
@@ -77,32 +87,20 @@ class Block:
         Returns:
             A new Block object
         """
-        data_str = "\n".join(list(map(str, data)))
-        # construct the string to hash
-        block_string = (
-            f"{_id}"
-            f"{data_str}"
-            f"{nonce}"
-            f"{prev_hash}"
-            f"{timestamp}"
-        )            
+        block = Block(_id, txns, nonce, prev_hash, timestamp=timestamp)
+        block_bytes = block.to_bytes(False)        
     
         # use the constructed string to compute the hash
-        block_hash = hashlib.sha256(block_string.encode()).hexdigest()
+        block_hash = hashlib.sha256(block_bytes).hexdigest()
         
         # check if hash meets the difficulty level
         if block_hash.startswith('0' * difficulty):
-            return Block( # return the Block object if found a valid hash
-                _id = _id,
-                data = data,
-                nonce = nonce,
-                prev_hash = prev_hash,
-                _hash = block_hash,
-                timestamp = timestamp
-            )
+            block.hash = block_hash
+            return block
+        
         return None
     
-    def to_bytes(self):
+    def to_bytes(self, with_hash=True):
         """
         Converts this block to byte representation for network transmission
         
@@ -110,36 +108,9 @@ class Block:
             bytes: byte represenatation of this block
         """
         # use a dict to represent the block and convert it to json str
-        data_str = "\n".join(list(map(str, self.data)))
-        block_dict = {
-            'id': self.id,
-            'data': data_str,
-            'nonce': self.nonce,
-            'prev_hash': self.prev_hash,
-            'hash': self.hash,
-            'timestamp': self.timestamp
-        }
-        
-        json_str = json.dumps(block_dict)
-        
+        block_dict = self.to_json(with_hash)        
+        json_str = json.dumps(block_dict, sort_keys=True)
         return json_str.encode()
-        
-    
-    def to_string(self):
-        """
-        Converts this block to string representation. Useful for debugging
-        
-        Returns:
-            human-readable string rep of the block
-        """
-        data_str = "\n".join(list(map(str, self.data)))
-        return (
-            f"Block #{self.id}\n"
-            f"Data: {data_str}\n"
-            f"Nonce: {self.nonce}\n"
-            f"Prev Hash: {self.prev_hash}\n"
-            f"Hash: {self.hash}"
-        )
 
     @staticmethod
     def from_bytes(message_body):
@@ -157,12 +128,11 @@ class Block:
             # convert bytes to dict
             json_str = message_body.decode()
             block_dict = json.loads(json_str)
+
             
             # get all the stuff from the block
             block_id = block_dict['id']
-            data_str = block_dict['data']
-            data = data_str.split("\n")
-
+            txns = [Transaction.from_json(txn) for txn in block_dict["txns"]]
             nonce = block_dict['nonce']
             prev_hash = block_dict['prev_hash']
             block_hash = block_dict['hash']
@@ -171,7 +141,7 @@ class Block:
             # return the block obj
             return Block(
                 _id = block_id,
-                data = data,
+                txns = txns,
                 nonce = nonce,
                 prev_hash = prev_hash,
                 _hash = block_hash,
