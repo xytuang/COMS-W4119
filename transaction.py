@@ -1,6 +1,7 @@
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import serialization
+import json
 
 class Transaction:
     def __init__(self, sender, timestamp, data, signature=None):
@@ -17,15 +18,26 @@ class Transaction:
         self.data       = data
         self.signature  = signature
 
-    def to_string(self, with_signature=True):
-        transaction_string = f"{self.sender.decode()}\n"
-        transaction_string += f"{self.timestamp}\n"
-        transaction_string += f"{self.data}\n"
+    def to_json(self, with_signature=True):
+        txn_dict = {
+            "sender": self.sender.decode(),
+            "timestamp": self.timestamp,
+            "data": self.data
+        }
 
-        if with_signature and self.signature:
-            transaction_string += f"{self.signature.hex()}\n"
-        
-        return transaction_string
+        if with_signature:
+            txn_dict["signature"] = self.signature.hex()
+        return txn_dict
+    
+    @staticmethod
+    def from_json(obj):
+        return Transaction(
+            sender=obj["sender"].encode(),
+            timestamp=obj["timestamp"],
+            data=obj["data"],
+            signature=bytes.fromhex(obj["signature"]) if obj["signature"] else None
+        )
+
 
     def to_bytes(self, with_signature=True):
         """
@@ -38,33 +50,22 @@ class Transaction:
         Returns:
             A byte representation of this transaction
         """
-        transaction_string = self.to_string(with_signature)
-        return transaction_string.encode()
+        txn_dict = self.to_json(with_signature)
+        txn_json_str = json.dumps(txn_dict, sort_keys=True)
+        return txn_json_str.encode()
 
     @staticmethod
-    def from_string(txn_str):
-        parts = txn_str.split("\n")
-        
-        end_pub_key_idx = parts.index("-----END PUBLIC KEY-----")
-        sender_str = "\n".join(parts[1:end_pub_key_idx]).strip()
+    def from_bytes(txn_bytes):
+        txn_json_str = txn_bytes.decode()
+        txn_dict = json.loads(txn_json_str)
 
-        # there is an empty new line after the sender string, we skip it
-        timestamp_str = parts[end_pub_key_idx + 2].strip()
-        data_str = parts[end_pub_key_idx + 3].strip()
-        signature_str = parts[end_pub_key_idx + 4].strip()
-
-        # print(sender_str)
-        # print(timestamp_str)
-        # print(data_str)
-        # print(signature_str)
-
-        # Return the Transaction object
         return Transaction(
-            sender = sender_str.encode(),
-            timestamp = float(timestamp_str),
-            data = data_str,
-            signature = bytes.fromhex(signature_str)
+            sender=txn_dict["sender"].encode(),
+            timestamp=txn_dict["timestamp"],
+            data=txn_dict["data"],
+            signature=bytes.fromhex(txn_dict["signature"]) if txn_dict["signature"] else None
         )
+
 
 
     def sign(self, private_key):
@@ -113,6 +114,14 @@ class Transaction:
             return True
         except:
             return False
+
+    def to_string(self, with_signature=True):
+        """
+        Returns a string representation of the Transaction object.
+        """
+        txn_dict = self.to_json(with_signature)
+        txn_str = json.dumps(txn_dict, indent=4)
+        return txn_str
 
     def __str__(self):
         return self.to_string()

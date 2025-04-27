@@ -66,7 +66,7 @@ class Peer:
         with open(vote_file, "r") as f:
             for line in f:
                 if line.strip():
-                    votes.append(line)
+                    votes.append(line.strip())
         print("votes", votes)
         return votes
 
@@ -313,6 +313,14 @@ class Peer:
             
             timestamp = time.time()
             for _ in range(100):
+                with self.blockchain_lock:
+                    latest_block = self.blockchain.get_latest_block()
+                    if latest_block and latest_block.id >= mine_id:
+                        self.votes.append(current_txn.data)
+                        current_txn = None
+                        nonce = 0
+                        break
+                
                 nonce += 1
                 new_block = Block.mine(mine_id, [txn], prev_hash, nonce, timestamp, self.difficulty)
                 if new_block:
@@ -320,9 +328,9 @@ class Peer:
                         latest_block = self.blockchain.get_latest_block()
                         if not latest_block or (latest_block.id == mine_id + 1):
                             self.blockchain.add_block(new_block)
+                            self.broadcast_block_to_all_peers(new_block)
                         else:
-                            break
-                    self.broadcast_block_to_all_peers(new_block)
+                            self.votes.append(current_txn.data)
                     current_txn = None
                     nonce = 0
                     break
@@ -352,5 +360,3 @@ if __name__ == '__main__':
     # dummy_block = Block(_id=1, data="dummy", nonce=100, prev_hash=2, _hash=1)
     # peer.broadcast_block_to_all_peers(dummy_block)
     # peer.request_block_from_all_peers(nodes, 100)
-
-
