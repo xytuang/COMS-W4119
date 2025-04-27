@@ -1,3 +1,25 @@
+from block import Block
+import json
+
+"""
+Transaction format for the polling application
+
+1. For creating a poll:
+{
+    "transaction_type": "create_poll",
+    "poll_id": "unique_id",
+    "poll_name": "Question text",
+    "options": ["Option 1", "Option 2", "Option 3", "..."]
+}
+
+2. For voting:
+{
+    "transaction_type": "vote",
+    "poll_id": "unique_id",
+    "vote": "Option selected"
+}
+"""
+
 class Blockchain:
     def __init__(self, chain=None, difficulty=4):
         """
