@@ -70,9 +70,6 @@ class Peer:
                 block_encoded = peer_socket_helper.get_n_bytes_of_data(block_len)
                 block_builder = Block()
                 block = block_builder.from_bytes(block_encoded)
-                # Block logic goes here
-                print(block_len)
-                print(block)
 
                 self.rcv_buffer_lock.acquire()
                 self.rcv_buffer.append({"type":"BLOCK", "tag":header_arr[2], "payload":block, "peer_addr": addr})
