@@ -18,6 +18,38 @@ class Blockchain:
         """
         self.chain.append(block)
     
+    def swap_block(self, new_block, public_key):
+        """
+        For handling forking
+        Replaces the block with new_block._id with new_block.
+
+        Args:
+            new_block (Block): The new block to store
+
+        Returns:
+            Transaction[]: a list of transactions that need to re-mined and placed in a new block
+        """
+        swap_index = 0
+        for i in range(len(self.chain)):
+            blk = self.chain[i]
+            if blk._id == new_block._id:
+                swap_index = i
+                break
+        
+        dropped_blocks = self.chain[swap_index:]
+        self.chain = self.chain[:swap_index]
+        
+        
+        # dropped_blocks can contain transactions that a specific peer did not create and we must distinguish them
+        dropped_transactions = []
+        for blk in dropped_blocks:
+            for transaction in blk.data:
+                if transaction.sender == public_key:
+                    dropped_transactions.append(transaction)
+
+        return dropped_transactions
+
+
     # TBH idk if we ever need to validate the entire chain
     def validate_chain(self):
         pass

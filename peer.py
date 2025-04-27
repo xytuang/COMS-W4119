@@ -47,8 +47,17 @@ class Peer:
         self.blockchain = Blockchain()
         self.blockchain_lock = threading.Lock()
 
+        self.transactions = []
+
         self.difficulty = difficulty
 
+
+    def public_key_to_bytes(self):
+        public_key_bytes = self.public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
+        return public_key_bytes
 
     def process_peer_connections(self, listening_sock):
         print("Started listening thread.")
@@ -94,7 +103,6 @@ class Peer:
                 print(data)
                 _id = data["tag"]
                 block = data["payload"]
-                fork = False
 
                 if not block.is_valid():
                     continue
@@ -104,19 +112,49 @@ class Peer:
 
                     if not latest_block: # This peer does not have any blocks in its chain
                         self.blockchain.add_block(block)
-                    elif latest_block._id < _id: # This is non-forking case
+                    elif latest_block._id < _id: # This is non-forking case when received block comes after current last block in our chain
                         if latest_block._hash != block.prev_hash:
                             continue
                         self.blockchain.add_block(block)
-                    else:
-                        # TODO: Send get block requests to all the peer nodes
+                    elif latest_block._id >= _id:
+                        block_at_fork = self.blockchain.get_block_by_id(_id)
+                        if str(block_at_fork) == str(block): # We already have this block, just ignore it
+                            continue
 
+                        # Forking logic :)
                         # Set state to wait-mode where all we are looking for are
                         # get block responses
+                        with self.state_lock:
+                            self.state = State.WAITING_FOR_CHAIN
+                        
+                        # Send get block requests to all the peer nodes
                         peer_nodes_serialized = self.request_nodes_from_tracker()
                         peer_nodes = self.parse_serialized_nodes(peer_nodes_serialized)
                         peer_blocks = self.request_block_from_all_peers(peer_nodes, _id)
 
+                        # Track the number of votes for each block variation via their hashes (basically a hash table)
+                        hash_counts = {}
+                        for peer_block in peer_blocks:
+                            hash_counts.setdefault(peer_block._hash, 0)
+                            hash_counts[peer_block._hash] += 1
+                        
+                        # Get the most popular hash
+                        most_popular_hash = None
+                        most_popular_count = 0
+                        for _hash, count in hash_counts.items():
+                            if most_popular_hash is None or count > most_popular_count:
+                                most_popular_hash = _hash
+                                most_popular_count = count
+
+                        # Swap blocks if needed
+                        if block_at_fork._hash != most_popular_hash:
+                            # Get the new block to swap to
+                            new_block = list(filter(lambda blk: blk._hash == most_popular_hash, peer_blocks))[0]
+                            dropped_transactions = self.blockchain.swap_block(new_block, self.public_key_to_bytes())
+                            self.transactions.extend(dropped_transactions)
+                        
+                        with self.state_lock:
+                            self.state = State.MINING
             else:
                 print("rcv_buffer: got unsupported data type, ignoring")
 
