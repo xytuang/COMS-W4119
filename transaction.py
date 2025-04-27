@@ -18,13 +18,12 @@ class Transaction:
         self.signature  = signature
 
     def to_string(self, with_signature=True):
-        transaction_string = ""
-        transaction_string += f"sender:{self.sender.decode()}\n"
-        transaction_string += f"timestamp:{self.timestamp}\n"
-        transaction_string += f"data:{self.data}\n"
+        transaction_string = f"{self.sender.decode()}"
+        transaction_string += f" {self.timestamp}"
+        transaction_string += f" {self.data}"
 
         if with_signature and self.signature:
-            transaction_string += f"signature:{self.signature.hex()}\n"
+            transaction_string += f" {self.signature.hex()}"
         
         return transaction_string
 

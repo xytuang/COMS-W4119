@@ -9,47 +9,6 @@ class Blockchain:
         self.chain = chain if chain != None else []
         self.difficulty = difficulty
 
-    def is_valid_block(self, block):
-        """
-        Checks if block is a valid block that can be added to the chain
-
-        Checks include:
-        1. Does the hash of block fulfil the difficulty criteria?
-        2. Are the contents of block valid? ie. All transactions must have valid signatures
-        3. Does prev_hash of block match the hash of the last block in the chain?
-
-        Args:
-            block (Block): The block to add
-
-        Returns:
-            bool: True if block can be added to the chain, False otherwise
-        """
-        block_hash = str(block.hash)
-        
-        # Check if hash for this block fulfils difficulty requirement
-        if len(block_hash) < self.difficulty or block_hash[:self.difficulty] != "0" * self.difficulty:
-            return False
-        
-        # Ok this can be modified later if needed.
-        for transaction in block.data:
-            valid_signature = transaction.verify()
-
-            if not valid_signature:
-                return False
-
-
-        latest_block = self.get_latest_block()
-
-        # If this is the very first block, return True
-        if not latest_block:
-            return True
-        
-        # Check if prev_hash of block is equal to hash of last block in the chain
-        if latest_block.hash != block.prev_hash:
-            return False
-        
-        return True
-
     def add_block(self, block):
         """
         Adds a block to the chain
@@ -59,6 +18,38 @@ class Blockchain:
         """
         self.chain.append(block)
     
+    def swap_block(self, new_block, public_key):
+        """
+        For handling forking
+        Replaces the block with new_block._id with new_block.
+
+        Args:
+            new_block (Block): The new block to store
+
+        Returns:
+            Transaction[]: a list of transactions that need to re-mined and placed in a new block
+        """
+        swap_index = 0
+        for i in range(len(self.chain)):
+            blk = self.chain[i]
+            if blk._id == new_block._id:
+                swap_index = i
+                break
+        
+        dropped_blocks = self.chain[swap_index:]
+        self.chain = self.chain[:swap_index]
+        
+        
+        # dropped_blocks can contain transactions that a specific peer did not create and we must distinguish them
+        dropped_transactions = []
+        for blk in dropped_blocks:
+            for transaction in blk.data:
+                if transaction.sender == public_key:
+                    dropped_transactions.append(transaction)
+
+        return dropped_transactions
+
+
     # TBH idk if we ever need to validate the entire chain
     def validate_chain(self):
         pass
@@ -76,3 +67,14 @@ class Blockchain:
             latest_block = self.chain[-1]
 
         return latest_block
+
+    def get_block_by_id(self, _id):
+
+        # If our chain is long enough and such a block actually exists in our chain, we return that block
+        for i in range(len(self.chain)):
+            curr_block = self.chain[i]
+            if curr_block._id == _id:
+                return curr_block
+
+        # Else we return the latest block in our chain
+        return self.get_latest_block()
