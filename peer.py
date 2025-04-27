@@ -86,14 +86,14 @@ class Peer:
 
     def poll_from_rcv_buffer(self):
         while True:
+            data = None
             self.rcv_buffer_lock.acquire()
             if len(self.rcv_buffer) > 0:
                 data = self.rcv_buffer.popleft()
-            else:
-                self.rcv_buffer_lock.release()
-                continue
-
             self.rcv_buffer_lock.release()
+
+            if data == None:
+                continue
 
             if data["type"] == "BLOCK":
                 print(data)
