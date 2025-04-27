@@ -100,13 +100,11 @@ class Peer:
                 # TODO: Put it on the chain and do all that verification mumbo-jumbo
                 fork = False # TODO: Add forking logic
                 if fork:
-                    # TODO: Send get block requests to all the peer nodes
-
-                    # Set state to wait-mode where all we are looking for are
-                    # get block responses
                     peer_nodes_serialized = self.request_nodes_from_tracker()
                     peer_nodes = self.parse_serialized_nodes()
                     peer_blocks = self.request_block_from_all_peers(peer_nodes, 100)
+
+                    # Do forking stuff
             else:
                 print("rcv_buffer: got unsupported data type, ignoring")
 
