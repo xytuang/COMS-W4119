@@ -2,7 +2,7 @@ import hashlib
 import json
 
 class Block:
-    def __init__(self, _id, data, nonce, prev_hash, _hash):
+    def __init__(self, _id=None, data=None, nonce=None, prev_hash=None, _hash=None):
         """
         Creates a block
 

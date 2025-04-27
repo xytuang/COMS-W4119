@@ -49,7 +49,6 @@ class SocketHelper():
         header = curr_buf[:buf_idx]
         return header
 
-    # TODO: Might not need depending on our protocol
     def get_n_bytes_of_data(self, n_bytes):
         """
         Recieves n_bytes of data
