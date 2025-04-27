@@ -2,7 +2,7 @@ import hashlib
 import json
 
 class Block:
-    def __init__(self, _id=None, data=None, nonce=None, prev_hash=None, _hash=None):
+    def __init__(self, _id=None, data=None, nonce=None, prev_hash=None, _hash=None, timestamp=None):
         """
         Creates a block
 
@@ -18,6 +18,7 @@ class Block:
         self.nonce = nonce
         self.prev_hash = prev_hash
         self.hash = _hash
+        self.timestamp = timestamp
 
     
     def is_valid(self, difficulty):
@@ -63,7 +64,7 @@ class Block:
         
         
     @staticmethod
-    def mine(_id, data, prev_hash, difficulty = 4):
+    def mine(_id, data, prev_hash, nonce, difficulty = 4):
         """
         Finds a nonce given _id, data and prev_hash, and the hash for that nonce
 
@@ -75,31 +76,28 @@ class Block:
         Returns:
             A new Block object
         """
-        nonce = 0
-        
-        # inifite loop until it finds a nonce that produces a valid hash
-        while True:
-            # construct the string to hash
-            block_string = (
+        data_str = "\n".join(list(map(str, data)))
+        # construct the string to hash
+        block_string = (
             f"{_id}"
-            f"{data}"
+            f"{data_str}"
             f"{nonce}"
             f"{prev_hash}"
         )            
+    
+        # use the constructed string to compute the hash
+        block_hash = hashlib.sha256(block_string.encode()).hexdigest()
         
-            # use the constructed string to compute the hash
-            block_hash = hashlib.sha256(block_string.encode()).hexdigest()
-            
-            # check if hash meets the difficulty level
-            if block_hash.startswith('0' * difficulty):
-                return Block( # return the Block object if found a valid hash
-                    _id = _id,
-                    data = data,
-                    nonce = nonce,
-                    prev_hash = prev_hash,
-                    _hash = block_hash
-                )
-            nonce += 1 # keep finding if hash is not valid        
+        # check if hash meets the difficulty level
+        if block_hash.startswith('0' * difficulty):
+            return Block( # return the Block object if found a valid hash
+                _id = _id,
+                data = data,
+                nonce = nonce,
+                prev_hash = prev_hash,
+                _hash = block_hash
+            )
+        return None
     
     def to_bytes(self):
         """
@@ -109,9 +107,10 @@ class Block:
             bytes: byte represenatation of this block
         """
         # use a dict to represent the block and convert it to json str
+        data_str = "\n".join(list(map(str, self.data)))
         block_dict = {
             'id': self.id,
-            'data': self.data,
+            'data': data_str,
             'nonce': self.nonce,
             'prev_hash': self.prev_hash,
             'hash': self.hash
@@ -132,7 +131,7 @@ class Block:
         data_str = "\n".join(list(map(str, self.data)))
         return (
             f"Block #{self.id}\n"
-            f"Data: {self.data}\n"
+            f"Data: {data_str}\n"
             f"Nonce: {self.nonce}\n"
             f"Prev Hash: {self.prev_hash}\n"
             f"Hash: {self.hash}"
@@ -157,7 +156,9 @@ class Block:
             
             # get all the stuff from the block
             block_id = block_dict['id']
-            data = block_dict['data']
+            data_str = block_dict['data']
+            data = data_str.split("\n")
+
             nonce = block_dict['nonce']
             prev_hash = block_dict['prev_hash']
             block_hash = block_dict['hash']

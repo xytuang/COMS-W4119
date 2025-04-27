@@ -9,6 +9,7 @@ from block import Block
 import time
 from collections import deque
 from enums import State
+from transaction import Transaction
 
 MAX_QUEUED_CONNECTIONS = 5
 
@@ -47,10 +48,28 @@ class Peer:
         self.blockchain = Blockchain()
         self.blockchain_lock = threading.Lock()
 
-        self.transactions = []
+        self.transactions = self.read_from_transaction_file(transaction_file)
 
         self.difficulty = difficulty
 
+        self.mining_thread = threading.Thread(target=self.mine)
+        self.mining_thread.start()
+
+
+    def read_from_transaction_file(self, transaction_file):
+        if not transaction_file:
+            return []
+
+        transactions = []
+        with open(transaction_file, "r") as f:
+            for line in f:
+                if line.strip():
+                    parts = line.split()
+                    assert len(parts) == 2, f"Should be two space-separated elements in line, got {len(parts)}: {parts}"
+                    assert parts[0].isdigit(), f"Time must be int, got {parts[0]}"
+                    transactions.append((int(parts[0]), parts[1]))
+        
+        return transactions
 
     def public_key_to_bytes(self):
         public_key_bytes = self.public_key.public_bytes(
@@ -90,14 +109,14 @@ class Peer:
 
     def poll_from_rcv_buffer(self):
         while True:
+            data = None
             self.rcv_buffer_lock.acquire()
             if len(self.rcv_buffer) > 0:
                 data = self.rcv_buffer.popleft()
-            else:
-                self.rcv_buffer_lock.release()
-                continue
 
             self.rcv_buffer_lock.release()
+            if data == None:
+                continue
 
             if data["type"] == "BLOCK":
                 print(data)
@@ -138,18 +157,22 @@ class Peer:
                             hash_counts.setdefault(peer_block._hash, 0)
                             hash_counts[peer_block._hash] += 1
                         
-                        # Get the most popular hash
-                        most_popular_hash = None
-                        most_popular_count = 0
-                        for _hash, count in hash_counts.items():
-                            if most_popular_hash is None or count > most_popular_count:
-                                most_popular_hash = _hash
-                                most_popular_count = count
+                        max_count = max(hash_counts.values())
+
+                        max_hashes = [key for key, value in hash_counts.items() if value == max_count]
+                        max_hash = max_hashes[0]
+                        new_block = [blk for blk in peer_blocks if blk._hash == max_hash][0]
+
+                        # handle multiple majority votes
+                        if len(max_hashes) > 1:
+                            max_blocks = [blk for blk in peer_blocks if blk._hash in max_hashes]
+                            for blk in max_blocks:
+                                if blk.timestamp < new_block.timestamp:
+                                    new_block = blk
 
                         # Swap blocks if needed
-                        if block_at_fork._hash != most_popular_hash:
-                            # Get the new block to swap to
-                            new_block = list(filter(lambda blk: blk._hash == most_popular_hash, peer_blocks))[0]
+                        if block_at_fork._hash != new_block._hash:
+                            # Get the transactions that were lost after swap
                             dropped_transactions = self.blockchain.swap_block(new_block, self.public_key_to_bytes())
                             self.transactions.extend(dropped_transactions)
                         
@@ -244,6 +267,47 @@ class Peer:
 
             dest_socket.close()
         self.send_lock.release()
+    
+    def mine(self):
+        """
+        Mine for a block that contains a single transaction
+        """
+        nonce = 0
+        current_txn = None
+
+        while True:
+            if self.state != State.MINING:
+                continue
+            if not self.transactions and not current_txn:
+                continue
+
+            if not current_txn:
+                data = self.transactions.pop()
+                public_key_bytes = self.public_key_to_bytes()
+                txn = Transaction(public_key_bytes, time.time(), data)
+                txn.sign(self.private_key)
+                current_txn = txn
+            
+            with self.blockchain_lock:
+                latest_block = self.blockchain.get_latest_block()
+                prev_hash = 0 if not latest_block else latest_block._hash
+                mine_id = 0 if not latest_block else latest_block._id + 1
+            
+
+            for i in range(100):
+                nonce += 1
+                new_block = Block.mine(mine_id, [txn], prev_hash, nonce)
+                if new_block:
+                    with self.blockchain_lock:
+                        latest_block = self.blockchain.get_latest_block()
+                        if not latest_block or (latest_block._id == mine_id + 1):
+                            self.blockchain.add_block(new_block)
+                        else:
+                            break
+                    self.broadcast_block_to_all_peers(new_block)
+                    current_txn = None
+                    nonce = 0
+                    break            
 
 if __name__ == '__main__':
     listening_port = int(sys.argv[1])
