@@ -24,6 +24,8 @@ class Peer:
 
         self.rcv_buffer_lock = threading.Lock()
         self.rcv_buffer = deque()
+
+        self.state_lock = threading.Lock()
         self.state = State.IDLE
 
         self.listening_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -216,6 +218,8 @@ class Peer:
     def send_join_message(self):
         join_msg = "".join(["JOIN\n", str(self.listening_port), "\n"])
         self.tracker_socket.sendall(join_msg.encode())
+        with self.state_lock:
+            self.state = State.MINING
 
     def request_nodes_from_tracker(self):
         peer_request = "LIST\n"
@@ -276,8 +280,10 @@ class Peer:
         current_txn = None
 
         while True:
-            if self.state != State.MINING:
-                continue
+            with self.state_lock:
+                if self.state != State.MINING:
+                    continue
+
             if not self.transactions and not current_txn:
                 continue
 

@@ -41,6 +41,7 @@ class Block:
             f"{data_str}"
             f"{self.nonce}"
             f"{self.prev_hash}"
+            f"{self.timestamp}"
         )
         
         # use the reconstructed string to recompute the hash
@@ -64,7 +65,7 @@ class Block:
         
         
     @staticmethod
-    def mine(_id, data, prev_hash, nonce, difficulty = 4):
+    def mine(_id, data, prev_hash, nonce, timestamp, difficulty = 4):
         """
         Finds a nonce given _id, data and prev_hash, and the hash for that nonce
 
@@ -83,6 +84,7 @@ class Block:
             f"{data_str}"
             f"{nonce}"
             f"{prev_hash}"
+            f"{timestamp}"
         )            
     
         # use the constructed string to compute the hash
@@ -95,7 +97,8 @@ class Block:
                 data = data,
                 nonce = nonce,
                 prev_hash = prev_hash,
-                _hash = block_hash
+                _hash = block_hash,
+                timestamp = timestamp
             )
         return None
     
@@ -113,7 +116,8 @@ class Block:
             'data': data_str,
             'nonce': self.nonce,
             'prev_hash': self.prev_hash,
-            'hash': self.hash
+            'hash': self.hash,
+            'timestamp': self.timestamp
         }
         
         json_str = json.dumps(block_dict)
@@ -162,6 +166,7 @@ class Block:
             nonce = block_dict['nonce']
             prev_hash = block_dict['prev_hash']
             block_hash = block_dict['hash']
+            timestamp = block_dict['timestamp']
             
             # return the block obj
             return Block(
@@ -169,7 +174,8 @@ class Block:
                 data = data,
                 nonce = nonce,
                 prev_hash = prev_hash,
-                _hash = block_hash
+                _hash = block_hash,
+                timestamp = timestamp
             )
             
         except (json.JSONDecodeError, KeyError, UnicodeDecodeError) as e:
