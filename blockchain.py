@@ -72,9 +72,17 @@ class Blockchain:
         return dropped_transactions
 
 
-    # TBH idk if we ever need to validate the entire chain
-    def validate_chain(self):
-        pass
+    def can_add_block_to_chain(self, new_block):
+        if new_block.id != len(self.chain):
+            return False
+
+        if len(self.chain) == 0:
+            return True
+
+        latest_block_hash = self.get_latest_block().hash
+        if latest_block_hash != new_block.prev_hash:
+            return False
+        return True
 
     def get_latest_block(self):
         """
@@ -95,11 +103,11 @@ class Blockchain:
         # If our chain is long enough and such a block actually exists in our chain, we return that block
         for i in range(len(self.chain)):
             curr_block = self.chain[i]
-            if curr_block._id == _id:
+            if curr_block.id == _id:
                 return curr_block
 
-        # Else we return the latest block in our chain
-        return self.get_latest_block()
+        # Else there is no block and return None
+        return None
     
     
     def create_block(self, data):
