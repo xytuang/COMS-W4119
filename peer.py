@@ -153,7 +153,7 @@ class Peer:
                             self.state = State.WAITING_FOR_CHAIN
 
                         peer_ip_addr = data["peer_ip_addr"]
-                        peer_chain = get_chain_from_peer(peer_ip_addr, self.public_key_to_bytes())
+                        peer_chain = self.get_chain_from_peer(peer_ip_addr, self.public_key_to_bytes())
                         if peer_chain != None and len(peer_chain) > len(self.blockchain.chain):
                             self.blockchain = peer_chain
 
