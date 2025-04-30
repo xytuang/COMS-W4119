@@ -108,3 +108,96 @@ class Blockchain:
 
         # Else there is no block and return None
         return None
+    
+    
+    def create_block(self, data):
+        """
+        Create a new block with the given data and add it to the chain
+        
+        Args:
+            data (str or Transaction): The data to be included in the new block
+            
+        Returns:
+            Block: the newly created and added block
+        """
+        latest_block = self.get_latest_block()
+        new_block_id = 0 if latest_block is None else latest_block.id + 1
+        new_block_prev_hash = "0" * 64 if latest_block is None else latest_block.hash
+        
+        # start mining the new block
+        new_block = Block.mine(
+            _id = new_block_id,
+            data = data,
+            prev_hash = new_block_prev_hash,
+            difficulty = self.difficulty
+        )
+        
+        # add the block to chain
+        self.add_block(new_block)
+        
+        return new_block
+        
+    # I am not 100% sure if this is needed but from some videos I watched this is
+    # considered a special block and it's easy to implement so i did it anyway
+    def create_genesis_block(self):
+        """
+        Create the first block in the chain
+        
+        Returns:
+            Block: the gensis block
+        """
+        genesis_block = Block.mine(
+            _id = 0,
+            data = "",
+            prev_hash = "0" * 64,
+            difficulty = self.difficulty            
+        )
+        
+        self.add_block(genesis_block)
+        return genesis_block
+    
+    def get_poll_results(self):
+        """
+        Iterates through the blockchain and aggregate the poll results
+        
+        Returns:
+            dict: A dictionary with poll info and vote counts (key: poll_id, value: poll results)
+        """
+        
+        polls_result = {}
+        
+        for block in self.chain:
+            try:
+                transaction = json.loads(block.data)
+                if "transaction_type" in transaction:
+                
+                    # case 1: block's transaction contains poll creation
+                    if transaction["transaction_type"] == "create_poll":
+                        # get the info of this poll
+                        poll_id = transaction["poll_id"]
+                        poll_name = transaction["poll_name"]
+                        options = transaction["options"]
+                        
+                        # initialize this poll in dict
+                        polls_result[poll_id] = {
+                            "name": poll_name,
+                            "options": options,
+                            "vote_result": {option: 0 for option in options} # initialize vote : 0 for every option
+                        }
+
+                    # case 2: block's transaction contains vote
+                    elif transaction["transaction_type"] == "vote":
+                        poll_id = transaction["poll_id"]
+                        voted_option = transaction["vote"]
+                        
+                        # add vote to the poll
+                        if (poll_id in polls_result and 
+                            voted_option in polls_result[poll_id]["vote_result"]):
+                            
+                            polls_result[poll_id]["vote_result"][voted_option] += 1
+                    
+            except (json.JSONDecodeError, KeyError, TypeError) as e:
+                # ignore blocks that contains invalid json (including genesis)
+                continue
+            
+        return polls_result
