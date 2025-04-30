@@ -11,9 +11,9 @@ active_peers_lock = threading.Lock()
 
 # Usage: python3 tracker.py <tracker_port>
 
-def delete_peer(peer_addr):
+def delete_peer(peer_id):
     active_peers_lock.acquire()
-    del active_peers[peer_addr]
+    del active_peers[peer_id]
     active_peers_lock.release()
 
 def serialize_active_peers(curr_peer_addr):
@@ -60,6 +60,28 @@ def process_peer_requests(peer):
 
     print("Peer listening port:",peer.listening_port)
 
+    pub_id_header_bytes = peer_socket_helper.get_data_until_newline()
+
+    if pub_id_header_bytes == None:
+        return
+
+    pub_id_header = pub_id_header_bytes.decode().split(' ')
+    if pub_id_header[0] != "ID":
+        return
+
+    pub_key_len = int(pub_id_header[1])
+
+    peer.pub_id = peer_socket_helper.get_n_bytes_of_data(pub_key_len)
+
+    # Once we recieve the peer ID, add it to the list
+    active_peers_lock.acquire()
+    active_peers[peer.pub_id] = peer
+    active_peers_lock.release()
+    
+    print("Peer ID (bytes):",peer.pub_id)
+
+    #TODO: Might want to send ACK that the peer has been registered
+
     # Listen for request to send list of peers
     while True:
         header_bytes = peer_socket_helper.get_data_until_newline()
@@ -67,21 +89,40 @@ def process_peer_requests(peer):
             break
 
         header = header_bytes.decode()
-        if header != "LIST":
-            break
+        if header == "LIST":
+            active_peers_str = serialize_active_peers(peer.addr)
 
-        active_peers_str = serialize_active_peers(peer.addr)
+            print("Sending peers:", active_peers_str)
 
-        print("Sending peers:", active_peers_str)
+            active_peers_bytes = active_peers_str.encode()
 
-        active_peers_bytes = active_peers_str.encode()
+            # Send list of peers
+            peer.socket.sendall(active_peers_bytes)
+        else:
+            header_arr = header.split(' ')
+            if header_arr[0] != "GET-PEER":
+                break
 
-        # Send list of peers
-        peer.socket.sendall(active_peers_bytes)
+            print("Serving GET-PEER request")
+
+            pub_id_len = int(header_arr[1])
+
+            peer_pub_id = peer_socket_helper.get_n_bytes_of_data(pub_id_len)
+            msg = ["PEER-PORT", "\n"]
+            active_peers_lock.acquire()
+            if peer_pub_id in active_peers:
+                msg.append(str(active_peers[peer_pub_id].listening_port))
+                msg.append("\n")
+            else:
+                msg.append("-1")
+                msg.append("\n")
+            active_peers_lock.release()
+            peer.socket.sendall("".join(msg).encode())
+            print("Sending ", "".join(msg))
 
     # If connection closed, remove peer from list
     peer.socket.close()
-    delete_peer(peer.addr)
+    delete_peer(peer.pub_id)
 
     print("Disconnected peer at " + str(peer.addr))
     
@@ -90,6 +131,7 @@ class PeerConn:
         self.socket = None
         self.addr = None
         self.listening_port = None
+        self.pub_id = None
 
 class Tracker:
     def __init__(self, tracker_port):
@@ -107,10 +149,6 @@ class Tracker:
             peer = PeerConn()
             peer.addr = addr
             peer.socket = peer_socket
-
-            active_peers_lock.acquire()
-            active_peers[addr] = peer
-            active_peers_lock.release()
 
             peer_conn_thread = threading.Thread(target=process_peer_requests, args=(peer,))
             peer_conn_thread.start()
