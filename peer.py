@@ -53,7 +53,8 @@ class Peer:
         self.blockchain = Blockchain()
         self.blockchain_lock = threading.Lock()
 
-        self.votes = self.read_from_vote_file(vote_file)
+        self.txns = []
+        self.txn_lock = threading.Lock()
 
         self.difficulty = difficulty
 
@@ -105,7 +106,7 @@ class Peer:
                     
                     # If our chain is empty, create a fake block
                     if not requested_block:
-                        fake_txn = Transaction(b"", time.time(), "")
+                        fake_txn = Transaction(b"", time.time(), {})
                         fake_txn.sign(self.private_key)
                         requested_block = Block(-1, [fake_txn], 0, 0, 0, time.time())
 
@@ -313,16 +314,14 @@ class Peer:
             with self.state_lock:
                 if self.state != State.MINING:
                     continue
+            with self.txn_lock:
+                if not self.txns and not current_txn:
+                    continue
 
-            if not self.votes and not current_txn:
-                continue
-
-            if not current_txn:
-                data = self.votes.pop()
-                public_key_bytes = self.public_key_to_bytes()
-                txn = Transaction(public_key_bytes, time.time(), data)
-                txn.sign(self.private_key)
-                current_txn = txn
+                if not current_txn:
+                    current_txn = self.txns.pop()
+                    current_txn.timestamp = time.time()
+                    current_txn.sign(self.private_key)
             
             with self.blockchain_lock:
                 latest_block = self.blockchain.get_latest_block()
@@ -334,13 +333,14 @@ class Peer:
                 with self.blockchain_lock:
                     latest_block = self.blockchain.get_latest_block()
                     if latest_block and latest_block.id >= mine_id:
-                        self.votes.append(current_txn.data)
+                        with self.txn_lock:
+                            self.txns.append(current_txn)
                         current_txn = None
                         nonce = 0
                         break
                 
                 nonce += 1
-                new_block = Block.mine(mine_id, [txn], prev_hash, nonce, timestamp, self.difficulty)
+                new_block = Block.mine(mine_id, [current_txn], prev_hash, nonce, timestamp, self.difficulty)
                 if new_block:
                     with self.blockchain_lock:
                         latest_block = self.blockchain.get_latest_block()
@@ -348,29 +348,47 @@ class Peer:
                             self.blockchain.add_block(new_block)
                             self.broadcast_block_to_all_peers(new_block)
                         else:
-                            self.votes.append(current_txn.data)
+                            with self.txn_lock:
+                                self.txns.append(current_txn)
                     current_txn = None
                     nonce = 0
                     break
-            time.sleep(0.1)            
+            time.sleep(0.1)
 
-if __name__ == '__main__':
-    listening_port = int(sys.argv[1])
-    tracker_addr = sys.argv[2]
-    tracker_port = int(sys.argv[3])
+    def create_txn(self, data_dict):
+        """
+        Creates a transaction using the dictionary specified by data_dict
 
-    difficulty = 4
+        Args:
+            data_dict (dict): Some data that the user wants to send as part of a transaction
+        """
+        public_key_bytes = self.public_key_to_bytes()
+        txn = Transaction(public_key_bytes, time.time(), data_dict)
+        txn.sign(self.private_key)
+        with self.txn_lock:
+            self.txns.append(txn)
 
-    if len(sys.argv) >= 5:
-        difficulty = int(sys.argv[4])
+    def get_chain(self):
+        with self.blockchain_lock:
+            chain = self.blockchain.chain[:]
+        return chain
+# if __name__ == '__main__':
+#     listening_port = int(sys.argv[1])
+#     tracker_addr = sys.argv[2]
+#     tracker_port = int(sys.argv[3])
+
+#     difficulty = 4
+
+#     if len(sys.argv) >= 5:
+#         difficulty = int(sys.argv[4])
     
-    vote_file = None
-    if len(sys.argv) >= 6:
-        vote_file = sys.argv[5]
+#     vote_file = None
+#     if len(sys.argv) >= 6:
+#         vote_file = sys.argv[5]
 
-    peer = Peer(tracker_addr, tracker_port, listening_port, difficulty, vote_file, debug=True)
-    peer.send_join_message()
-
+#     peer = Peer(tracker_addr, tracker_port, listening_port, difficulty, vote_file, debug=True)
+#     peer.send_join_message()
+    
     ################################################################ Get blockchain test
     # print(peer.get_port_from_peer_id(peer.public_key_to_bytes()))
     # dumb_chain = Blockchain()

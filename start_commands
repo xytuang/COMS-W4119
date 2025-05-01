@@ -1,0 +1,5 @@
+python3 tracker.py 65001
+
+python3 app.py 65002 127.0.0.1 65001 2
+python3 app.py 65003 127.0.0.1 65001 2
+python3 app.py 65004 127.0.0.1 65001 2

@@ -10,7 +10,7 @@ class Transaction:
         Args:
             sender (bytes): The byte representation of the public_key of the peer that created this transaction. We need this for verification
             timestamp (float) Time at which transaction was created.
-            data (string): Data for this particular transaction. Can be "vote for X" or something
+            data (dict): Data for this particular transaction.
             signature (bytes, optional): The signature for this transaction. Defaults to None.
         """
         self.sender     = sender
