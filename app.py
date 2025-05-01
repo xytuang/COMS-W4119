@@ -1,6 +1,7 @@
 import sys
 import uuid
 
+from enums import State
 from peer import Peer
 
 
@@ -124,6 +125,65 @@ def is_int(input_str, rng=None):
         return False
     except ValueError:
         return False
+    
+def shutdown(peer):
+    """
+    Shutdown procedure for a peer
+    
+    Args:
+        peer (Peer): the peer instance to shut down
+    """
+    
+    print("\nStarting shutdown procedure...")
+    
+    with peer.state_lock:
+        peer.state = State.SHUTTING_DOWN
+    
+    peer.shutdown_event.set() # signal all threads to terminate
+    
+    # 1. closing tracker connection
+    print("Closing connection to tracker...")
+    try:
+        with peer.tracker_lock:
+            try:
+                leave_msg = "LEAVE\n"
+                peer.tracker_socket.sendall(leave_msg.encode())
+            except Exception as e:
+                print(f"Failed to send leave message: {e}")
+            
+            peer.tracker_socket.close()
+    except Exception as e:
+        print(f"Error closing tracker connnection: {e}")        
+    
+    # 2. closing listening socket
+    print("Closing listenning port...")
+    try:
+        peer.listening_sock.close()
+    except Exception as e:
+        print(f"Error closing listening socket: {e}")
+        
+    print("Waiting for threads to finish...")
+    
+    timeout = 3 # avoid hanging
+    # join the threads with timeout (smae for all three threads)
+    if hasattr(peer, 'listening_thread') and peer.listening_thread.is_alive():
+        peer.listening_thread.join(timeout)
+        if peer.listening_thread.is_alive():
+            print("Warning: listening thread didn't terminate properly!")
+            
+    if hasattr(peer, 'polling_thread') and peer.polling_thread.is_alive():
+        peer.polling_thread.join(timeout)
+        if peer.polling_thread.is_alive():
+            print("Warning: polling thread didn't terminate properly!")
+
+    if hasattr(peer, 'mining_thread') and peer.mining_thread.is_alive():
+        peer.mining_thread.join(timeout)
+        if peer.mining_thread.is_alive():
+            print("Warning: mining thread didn't terminate properly!")
+        
+    print("Peer all shut down")
+    
+    
 
 
 if __name__ == '__main__':
@@ -146,6 +206,7 @@ if __name__ == '__main__':
     number_of_options = 5
     option_str = "Pick an option:\n 1. Create poll\n 2. Display available polls\n 3. Vote for a poll\n 4. See poll results\n 5. Quit\n"
 
+    try:
     # we can shift this while loop to the application layer, but place it here for now
     while True:
         print("-------------------------------------------")
