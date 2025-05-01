@@ -83,7 +83,7 @@ class VotingApp:
         # mine the block (simplified)
         new_block = Block.mine(
             _id = block_id,
-            data = transaction.to_string(),
+            txns = [transaction],
             prev_hash = prev_hash
         )
         
@@ -131,8 +131,9 @@ class VotingApp:
         
         new_block = Block.mine(
             _id=block_id,
-            data=transaction.to_string(),
-            prev_hash=prev_hash
+            txns=[transaction],
+            prev_hash=prev_hash,
+            timestamp=time.time()
         )                
 
         self.peer.blockchain.add_block(new_block)
