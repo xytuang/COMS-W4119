@@ -295,7 +295,6 @@ class Peer:
 
     def broadcast_block_to_all_peers(self, block):
         print("broadcast_block_to_all_peers: broadcasting block")
-        print("broadcast_block_to_all_peers: current ip", socket.gethostbyname(socket.gethostname()))
         nodes_serialized = self.request_nodes_from_tracker()
         nodes = self.parse_serialized_nodes(nodes_serialized)
 
@@ -322,6 +321,7 @@ class Peer:
         print("Start mining")
         nonce = 0
         current_txn = None
+        mine_id = 0
 
         while True:
             with self.state_lock:
@@ -356,9 +356,10 @@ class Peer:
                 nonce += 1
                 new_block = Block.mine(mine_id, [current_txn], prev_hash, nonce, timestamp, self.difficulty)
                 if new_block:
+                    print("found a new block!")
                     with self.blockchain_lock:
                         latest_block = self.blockchain.get_latest_block()
-                        if not latest_block or (latest_block.id == mine_id + 1):
+                        if not latest_block or (latest_block.id+1 == mine_id):
                             print("mine: found valid block")
                             self.blockchain.add_block(new_block)
                             self.broadcast_block_to_all_peers(new_block)
