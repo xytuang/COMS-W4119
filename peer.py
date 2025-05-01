@@ -86,8 +86,10 @@ class Peer:
         while True:
             peer_socket, addr = listening_sock.accept()
             peer_socket_helper = SocketHelper(peer_socket)
+            print("process_peer_connections: Connected to new peer.")
             header = peer_socket_helper.get_data_until_newline().decode()
             header_arr = header.split(' ')
+            print("process_peer_connections: found header", header_arr)
             if header_arr[0] == "BLOCK":
                 block_len = int(header_arr[1])
                 block_encoded = peer_socket_helper.get_n_bytes_of_data(block_len)
@@ -254,7 +256,10 @@ class Peer:
         peer_request = "LIST\n"
         self.tracker_lock.acquire()
 
-        self.tracker_socket.sendall(peer_request.encode())
+        peer_bytes = "".join(["LIST", " ", str(len(self.public_key_to_bytes())), "\n"]).encode()
+        peer_bytes += self.public_key_to_bytes()
+
+        self.tracker_socket.sendall(peer_bytes)
 
         header_bytes = self.tracker_socket_helper.get_data_until_newline()
         header = header_bytes.decode()
@@ -289,11 +294,19 @@ class Peer:
         peer_socket.sendall(all_bytes)
 
     def broadcast_block_to_all_peers(self, block):
+        print("broadcast_block_to_all_peers: broadcasting block")
+        print("broadcast_block_to_all_peers: current ip", socket.gethostbyname(socket.gethostname()))
         nodes_serialized = self.request_nodes_from_tracker()
         nodes = self.parse_serialized_nodes(nodes_serialized)
 
         self.send_lock.acquire()
         for node in nodes:
+            curr_ip = socket.gethostbyname(socket.gethostname())
+            # Don't broadcast node to yourself
+            print(node[0])
+            print(node[1])
+            if node[0] == curr_ip and node[1] == self.listening_port:
+                continue
             dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             dest_socket.connect((node[0], node[1]))
             
@@ -313,6 +326,7 @@ class Peer:
         while True:
             with self.state_lock:
                 if self.state != State.MINING:
+                    print("mine: skipped mining because state wasn't in mining mode")
                     continue
             with self.txn_lock:
                 if not self.txns and not current_txn:
@@ -345,6 +359,7 @@ class Peer:
                     with self.blockchain_lock:
                         latest_block = self.blockchain.get_latest_block()
                         if not latest_block or (latest_block.id == mine_id + 1):
+                            print("mine: found valid block")
                             self.blockchain.add_block(new_block)
                             self.broadcast_block_to_all_peers(new_block)
                         else:

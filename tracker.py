@@ -16,17 +16,16 @@ def delete_peer(peer_id):
     del active_peers[peer_id]
     active_peers_lock.release()
 
-def serialize_active_peers(curr_peer_addr):
+def serialize_active_peers(peer_pub_id):
     active_peers_lock.acquire()
 
     res = ['PEERS', '\n']
 
     exist_active_peers = False
-    for peer_addr in active_peers:
-        # Skip the peer you're sending to
-        if peer_addr == curr_peer_addr:
+    for peer_id in active_peers:
+        if peer_id == peer_pub_id:
             continue
-        peer = active_peers[peer_addr]
+        peer = active_peers[peer_id]
         exist_active_peers = True
         res.append(peer.addr[0]) # IP address
         res.append(',')
@@ -89,8 +88,15 @@ def process_peer_requests(peer):
             break
 
         header = header_bytes.decode()
-        if header == "LIST":
-            active_peers_str = serialize_active_peers(peer.addr)
+        header_arr = header.split(' ')
+        if header_arr[0] == "LIST":
+            print("Serving LIST request")
+
+            pub_id_len = int(header_arr[1])
+
+            peer_pub_id = peer_socket_helper.get_n_bytes_of_data(pub_id_len)
+
+            active_peers_str = serialize_active_peers(peer_pub_id)
 
             print("Sending peers:", active_peers_str)
 
@@ -98,11 +104,7 @@ def process_peer_requests(peer):
 
             # Send list of peers
             peer.socket.sendall(active_peers_bytes)
-        else:
-            header_arr = header.split(' ')
-            if header_arr[0] != "GET-PEER":
-                break
-
+        elif header_arr[0] == "GET-PEER":
             print("Serving GET-PEER request")
 
             pub_id_len = int(header_arr[1])
@@ -119,6 +121,8 @@ def process_peer_requests(peer):
             active_peers_lock.release()
             peer.socket.sendall("".join(msg).encode())
             print("Sending ", "".join(msg))
+        else:
+            print("Unrecognized request type")
 
     # If connection closed, remove peer from list
     peer.socket.close()
