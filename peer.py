@@ -61,6 +61,8 @@ class Peer:
         self.mining_thread = threading.Thread(target=self.mine)
         self.mining_thread.start()
 
+        self.shutdown_event = threading.Event()
+        
     def read_from_vote_file(self, vote_file):
         if not vote_file:
             return []
@@ -83,43 +85,56 @@ class Peer:
     def process_peer_connections(self, listening_sock):
         print("Started listening thread.")
         listening_sock.listen(MAX_QUEUED_CONNECTIONS)
-        while True:
-            peer_socket, addr = listening_sock.accept()
-            peer_socket_helper = SocketHelper(peer_socket)
-            print("process_peer_connections: Connected to new peer.")
-            header = peer_socket_helper.get_data_until_newline().decode()
-            header_arr = header.split(' ')
-            print("process_peer_connections: found header", header_arr)
-            if header_arr[0] == "BLOCK":
-                block_len = int(header_arr[1])
-                block_encoded = peer_socket_helper.get_n_bytes_of_data(block_len)
-                block_builder = Block()
-                block = block_builder.from_bytes(block_encoded)
+        
+        # set a timeout so we can check for shutdown periodically
+        listening_sock.settimeout(1.0)
+        
+        while not self.shutdown_event.is_set():            
+            try:
+                peer_socket, addr = listening_sock.accept()
+                peer_socket_helper = SocketHelper(peer_socket)
+                print("process_peer_connections: Connected to new peer.")
+                header = peer_socket_helper.get_data_until_newline().decode()
+                header_arr = header.split(' ')
+                print("process_peer_connections: found header", header_arr)
+                if header_arr[0] == "BLOCK":
+                    block_len = int(header_arr[1])
+                    block_encoded = peer_socket_helper.get_n_bytes_of_data(block_len)
+                    block_builder = Block()
+                    block = block_builder.from_bytes(block_encoded)
 
-                self.rcv_buffer_lock.acquire()
-                self.rcv_buffer.append({"type":"BLOCK", "tag":header_arr[2], "payload":block, "peer_ip_addr": addr[0]})
-                self.rcv_buffer_lock.release()
-            elif header_arr[0] == "GET-BLOCK":
-                # TODO: Would want to grab the block ID from the header and use it to find the block on our chain to send back
-                # TODO: Replace the dummy logic here with the above
-                _id = int(header_arr[1])
-                with self.blockchain_lock:
-                    requested_block = self.blockchain.get_block_by_id(_id)
-                    
-                    # If our chain is empty, create a fake block
-                    if not requested_block:
-                        fake_txn = Transaction(b"", time.time(), {})
-                        fake_txn.sign(self.private_key)
-                        requested_block = Block(-1, [fake_txn], 0, 0, 0, time.time())
+                    self.rcv_buffer_lock.acquire()
+                    self.rcv_buffer.append({"type":"BLOCK", "tag":header_arr[2], "payload":block, "peer_ip_addr": addr[0]})
+                    self.rcv_buffer_lock.release()
+                elif header_arr[0] == "GET-BLOCK":
+                    # TODO: Would want to grab the block ID from the header and use it to find the block on our chain to send back
+                    # TODO: Replace the dummy logic here with the above
+                    _id = int(header_arr[1])
+                    with self.blockchain_lock:
+                        requested_block = self.blockchain.get_block_by_id(_id)
+                        
+                        # If our chain is empty, create a fake block
+                        if not requested_block:
+                            fake_txn = Transaction(b"", time.time(), {})
+                            fake_txn.sign(self.private_key)
+                            requested_block = Block(-1, [fake_txn], 0, 0, 0, time.time())
 
-                self.send_block_to_peer(requested_block, "EXIST", peer_socket)
-            else:
-                print("Unsupported header type")
+                    self.send_block_to_peer(requested_block, "EXIST", peer_socket)
+                else:
+                    print("Unsupported header type")
 
-            peer_socket.close()
-
+                peer_socket.close()
+            except socket.timeout:
+                # if just a timeout, continue and check check shutdown flag
+                continue
+            except Exception as e:
+                if self.shutdown_event.is_set():
+                    break
+                print(f"Error in process_peer_connections: {e}")
+        print("Listening thread terminated")
+        
     def poll_from_rcv_buffer(self):
-        while True:
+        while not self.shutdown_event.is_set():
             data = None
             self.rcv_buffer_lock.acquire()
             if len(self.rcv_buffer) > 0:
@@ -128,9 +143,11 @@ class Peer:
             self.rcv_buffer_lock.release()
 
             if data == None:
+                time.sleep(0.001)
                 continue
 
             if data["type"] == "BLOCK":
+                time.sleep(0.001)
                 print(data)
 
                 block = data["payload"]
@@ -153,6 +170,9 @@ class Peer:
                         # Set state to wait-mode where all we are looking for are
                         # get block responses
                         with self.state_lock:
+                            # avoid state changes during shutdown (same below)
+                            if self.shutdown_event.is_set():
+                                break
                             self.state = State.WAITING_FOR_CHAIN
 
                         peer_ip_addr = data["peer_ip_addr"]
@@ -161,12 +181,16 @@ class Peer:
                             self.blockchain = peer_chain
 
                         with self.state_lock:
+                            if self.shutdown_event.is_set():
+                                break
                             self.state = State.MINING
             else:
                 print("rcv_buffer: got unsupported data type, ignoring")
 
             # To avoid throttling the CPU
             time.sleep(0.001)
+            
+        print("Polling thread terminated")
 
     def get_port_from_peer_id(self, peer_pub_id):
         msg = ["GET-PEER", " ", str(len(peer_pub_id)), "\n"]
@@ -323,7 +347,7 @@ class Peer:
         current_txn = None
         mine_id = 0
 
-        while True:
+        while not self.shutdown_event.is_set():
             with self.state_lock:
                 if self.state != State.MINING:
                     print("mine: skipped mining because state wasn't in mining mode")
@@ -344,6 +368,13 @@ class Peer:
             
             timestamp = time.time()
             for _ in range(100):
+                if self.shutdown_event.is_set():
+                    if current_txn:
+                        with self.txn_lock: 
+                            # no txns lost during shutdown
+                            self.txns.appendleft(current_txn)
+                    break
+                
                 with self.blockchain_lock:
                     latest_block = self.blockchain.get_latest_block()
                     if latest_block and latest_block.id >= mine_id:
@@ -369,7 +400,12 @@ class Peer:
                     current_txn = None
                     nonce = 0
                     break
+            if self.shutdown_event.is_set():
+                break
+            
             time.sleep(0.1)
+            
+        print("Mining thread terminated")
 
     def create_txn(self, data_dict):
         """
@@ -388,6 +424,20 @@ class Peer:
         with self.blockchain_lock:
             chain = self.blockchain.chain[:]
         return chain
+
+    def send_leave_message(self):
+        """
+        Notifies the tracker that this peer is leaving the network
+        """
+        try:
+            with self.tracker_lock:
+                leave_msg = "LEAVE\n"
+                self.tracker_socket.sendall(leave_msg.encode())
+                print("Sent LEAVE msg to tracker")
+        except Exception as e:
+            print(f"Error sending LEAVE message: {e}")
+    
+    
 # if __name__ == '__main__':
 #     listening_port = int(sys.argv[1])
 #     tracker_addr = sys.argv[2]
