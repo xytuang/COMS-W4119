@@ -53,7 +53,7 @@ class Peer:
         self.blockchain = Blockchain()
         self.blockchain_lock = threading.Lock()
 
-        self.txns = []
+        self.txns = deque()
         self.txn_lock = threading.Lock()
 
         self.difficulty = difficulty
@@ -329,11 +329,11 @@ class Peer:
                     print("mine: skipped mining because state wasn't in mining mode")
                     continue
             with self.txn_lock:
-                if not self.txns and not current_txn:
+                if len(self.txns) == 0 and not current_txn:
                     continue
 
                 if not current_txn:
-                    current_txn = self.txns.pop()
+                    current_txn = self.txns.popleft()
                     current_txn.timestamp = time.time()
                     current_txn.sign(self.private_key)
             
@@ -348,7 +348,7 @@ class Peer:
                     latest_block = self.blockchain.get_latest_block()
                     if latest_block and latest_block.id >= mine_id:
                         with self.txn_lock:
-                            self.txns.append(current_txn)
+                            self.txns.appendleft(current_txn)
                         current_txn = None
                         nonce = 0
                         break
@@ -365,7 +365,7 @@ class Peer:
                             self.broadcast_block_to_all_peers(new_block)
                         else:
                             with self.txn_lock:
-                                self.txns.append(current_txn)
+                                self.txns.appendleft(current_txn)
                     current_txn = None
                     nonce = 0
                     break
