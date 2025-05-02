@@ -74,7 +74,7 @@ class Blockchain:
 
     def can_add_block_to_chain(self, new_block):
         if new_block.id != len(self.chain):
-            print(f"LOG can_add_block_to_chain: can't add block due to invalid block id (new id: {str(new_block.id)}, chain length: {str(len(self.chain))})")
+            # print(f"LOG can_add_block_to_chain: can't add block due to invalid block id (new id: {str(new_block.id)}, chain length: {str(len(self.chain))})")
             return False
 
         if len(self.chain) == 0:
@@ -82,7 +82,7 @@ class Blockchain:
 
         latest_block_hash = self.get_latest_block().hash
         if latest_block_hash != new_block.prev_hash:
-            print("LOG can_add_block_to_chain: rejected block due to invalid hash")
+            # print("LOG can_add_block_to_chain: rejected block due to invalid hash")
             return False
 
         if self.is_new_block_repeat_poll(new_block):
@@ -91,14 +91,14 @@ class Blockchain:
         return True
 
     def is_new_block_repeat_poll(self, new_block):
-        print("new_block.txns[0].data:", new_block.txns[0].data)
+        # print("new_block.txns[0].data:", new_block.txns[0].data)
         if "poll_name" in new_block.txns[0].data:
-            print("new_block.txns[0].data:", new_block.txns[0].data)
+            # print("new_block.txns[0].data:", new_block.txns[0].data)
             for block in self.chain:
-                print("\tblock.txns[0].data:", block.txns[0].data)
+                # print("\tblock.txns[0].data:", block.txns[0].data)
                 if "poll_name" in block.txns[0].data:
                     if block.txns[0].data["poll_name"] == new_block.txns[0].data["poll_name"]:
-                        print("LOG can_add_block_to_chain: rejected block due to existing poll")
+                        # print("LOG can_add_block_to_chain: rejected block due to existing poll")
                         return True
         return False
 

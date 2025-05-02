@@ -31,6 +31,8 @@ class Peer:
 
         self.debug = debug
 
+        self.log_file = open(f"{self.listening_port}_log.txt", "w")
+
         self.shutdown_event = threading.Event()
 
         self.listening_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -67,17 +69,18 @@ class Peer:
         self.broadcast_freq = None
         self.curr_step = 0
 
+
     def set_configs_from_file(self, config_file):
-        print("LOG set_configs_from_file: setting configurations...")
+        # print("LOG set_configs_from_file: setting configurations...", file=self.log_file)
         config_data = None
         with open(config_file, 'r') as f:
             config_data = json.load(f)
             if "tamper_freq" in config_data:
                 self.tamper_freq = config_data["tamper_freq"]
-                print("LOG set_configs_from_file: Block tamper frequency (for testing resiliency to bad data):", str(self.tamper_freq))
+                # print("LOG set_configs_from_file: Block tamper frequency (for testing resiliency to bad data):", str(self.tamper_freq), file=self.log_file)
             if "broadcast_freq" in config_data:
                 self.broadcast_freq = config_data["broadcast_freq"]
-                print("LOG set_configs_from_file: Block broadcast frequency (for testing forks):", str(self.broadcast_freq))
+                # print("LOG set_configs_from_file: Block broadcast frequency (for testing forks):", str(self.broadcast_freq), file=self.log_file)
 
     def public_key_to_bytes(self):
         public_key_bytes = self.public_key.public_bytes(
@@ -87,7 +90,7 @@ class Peer:
         return public_key_bytes
 
     def process_peer_connections(self, listening_sock):
-        print("LOG process_peer_connections: Started listening thread.")
+        # print("LOG process_peer_connections: Started listening thread.", file=self.log_file)
         listening_sock.listen(MAX_QUEUED_CONNECTIONS)
         # set a timeout so we can check for shutdown periodically
         listening_sock.settimeout(1.0)
@@ -96,10 +99,10 @@ class Peer:
             try:
                 peer_socket, addr = listening_sock.accept()
                 peer_socket_helper = SocketHelper(peer_socket)
-                print("LOG process_peer_connections: Connected to new peer.")
+                print("LOG process_peer_connections: Connected to new peer.", file=self.log_file)
                 header = peer_socket_helper.get_data_until_newline().decode()
                 header_arr = header.split(' ')
-                print("LOG process_peer_connections: found header", header_arr)
+                print("LOG process_peer_connections: found header", header_arr, file=self.log_file)
                 if header_arr[0] == "BLOCK":
                     block_len = int(header_arr[1])
                     block_encoded = peer_socket_helper.get_n_bytes_of_data(block_len)
@@ -124,15 +127,15 @@ class Peer:
 
                     self.send_block_to_peer(requested_block, "EXIST", peer_socket)
                 else:
-                    print("LOG process_peer_connections: Unsupported header type")
+                    print("LOG process_peer_connections: Unsupported header type", file=self.log_file)
 
                 peer_socket.close()
             except socket.timeout:
                 # if just a timeout, continue and check check shutdown flag
                 continue
             except Exception as e:
-                print(f"LOG process_peer_connections: Error in process_peer_connections (may be expected if closing): {e}")
-        print("LOG process_peer_connections: Listening thread terminated")
+                print(f"LOG process_peer_connections: Error in process_peer_connections (may be expected if closing): {e}", file=self.log_file)
+        print("LOG process_peer_connections: Listening thread terminated", file=self.log_file)
         
     def poll_from_rcv_buffer(self):
         while not self.shutdown_event.is_set():
@@ -150,13 +153,13 @@ class Peer:
                 continue
 
             if data["type"] == "BLOCK":
-                print("LOG poll_from_rcv_buffer: received block data: ", data)
+                print("LOG poll_from_rcv_buffer: received block data: ", data, file=self.log_file)
 
                 block = data["payload"]
                 _id = block.id
 
                 if not block.is_valid(self.difficulty):
-                    print("LOG poll_from_rcv_buffer: received invalid block, discarding")
+                    print("LOG poll_from_rcv_buffer: received invalid block, discarding", file=self.log_file)
                     continue
 
                 with self.blockchain_lock:
@@ -164,11 +167,14 @@ class Peer:
 
                     # Hash matches and the block ID is the next expected one
                     if self.blockchain.can_add_block_to_chain(block):
-                        print(f"LOG poll_from_rcv_buffer: added block {block.id} to chain")
+                        print(f"LOG poll_from_rcv_buffer: added block {block.id} to chain", file=self.log_file)
                         self.blockchain.add_block(block)
+                        chain = [f"id: {blk.id}" for blk in self.blockchain.chain]
+                        print(f"LOG poll_from_rcv_buffer: current state of blockchain: {chain}", file=self.log_file)
+                    
                     # If the incoming block is valid and has more work done, potential fork
                     elif _id > len(self.blockchain.chain):
-                        print(f"LOG poll_from_rcv_buffer: Detected fork (new id: {str(_id)}, chain len: {len(self.blockchain.chain)}), resolving")
+                        print(f"LOG poll_from_rcv_buffer: Detected fork (new id: {str(_id)}, chain len: {len(self.blockchain.chain)}), resolving", file=self.log_file)
                         # Forking logic :)
                         # Set state to wait-mode where all we are looking for are
                         # get block responses
@@ -187,12 +193,14 @@ class Peer:
                             if self.shutdown_event.is_set():
                                 break
                             self.state = State.MINING
+                        
+                        chain = [f"id: {blk.id}" for blk in self.blockchain.chain]
+                        print(f"LOG poll_from_rcv_buffer: current state of blockchain: {chain}", file=self.log_file)
                     else:
-                        print("LOG poll_from_rcv_buffer: Could not add block to chain and did not detect a fork, discarding")
+                        print("LOG poll_from_rcv_buffer: Could not add block to chain and did not detect a fork, discarding", file=self.log_file)
             else:
-                print("LOG poll_from_rcv_buffer: got unsupported data type, ignoring")
-
-        print("LOG poll_from_rcv_buffer: Polling thread terminated")
+                print("LOG poll_from_rcv_buffer: got unsupported data type, ignoring", file=self.log_file)
+        # print("LOG poll_from_rcv_buffer: Polling thread terminated", file=self.log_file)
 
     def get_port_from_peer_id(self, peer_pub_id):
         msg = ["GET-PEER", " ", str(len(peer_pub_id)), "\n"]
@@ -204,12 +212,12 @@ class Peer:
         header = header_bytes.decode()
 
         if header != "PEER-PORT":
-            print("LOG get_port_from_peer_id: Invalid header, expected PEER-PORT")
+            print("LOG get_port_from_peer_id: Invalid header, expected PEER-PORT", file=self.log_file)
             self.tracker_lock.release()
             return None
 
         port = self.tracker_socket_helper.get_data_until_newline()
-        print("LOG get_port_from_peer_id: got port", port)
+        print("LOG get_port_from_peer_id: got port", port, file=self.log_file)
 
         self.tracker_lock.release()
 
@@ -229,12 +237,12 @@ class Peer:
         while True:
             dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             dest_socket.connect((peer_addr, listening_port))
-            print("LOG get_chain_from_peer: Connected to peer.")
+            print("LOG get_chain_from_peer: Connected to peer.", file=self.log_file)
 
             msg = ["GET-BLOCK", " ", str(curr_id), "\n"]
             msg_bytes = "".join(msg).encode()
 
-            print("LOG get_chain_from_peer: Requesting block ID", str(curr_id))
+            print("LOG get_chain_from_peer: Requesting block ID", str(curr_id), file=self.log_file)
 
             dest_socket.sendall(msg_bytes)
 
@@ -249,14 +257,14 @@ class Peer:
             block = block_builder.from_bytes(block_encoded)
 
             if block.id == -1:
-                print("LOG get_chain_from_peer: Found end of chain.")
+                print("LOG get_chain_from_peer: Found end of chain.", file=self.log_file)
                 dest_socket.close()
                 break
             elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
-                print("LOG get_chain_from_peer: Added block")
+                print("LOG get_chain_from_peer: Added block", file=self.log_file)
                 peer_chain.add_block(block)
             else:
-                print("LOG get_chain_from_peer: found bad chain")
+                print("LOG get_chain_from_peer: found bad chain", file=self.log_file)
                 bad_chain = True
                 dest_socket.close()
                 break
@@ -277,6 +285,73 @@ class Peer:
         id_bytes = "".join(["ID", " ", str(len(self.public_key_to_bytes())), "\n"]).encode()
         id_bytes += self.public_key_to_bytes()
         self.tracker_socket.sendall(id_bytes)
+
+        # pick up the active peer list and get chain from all peers
+        header_bytes = self.tracker_socket_helper.get_data_until_newline()
+        header = header_bytes.decode()
+
+        if header != "PEERS":
+            print("Invalid header, expected PEERS")
+            return None
+
+        nodes_bytes = self.tracker_socket_helper.get_data_until_newline()
+        nodes_serialized = nodes_bytes.decode()
+        nodes = self.parse_serialized_nodes(nodes_serialized)
+
+
+        # set our chain to the longest chain currently present in the network
+        best_chain = Blockchain()
+
+        for node in nodes:
+            curr_id = 0
+            peer_chain = Blockchain()
+            bad_chain = False
+
+            while True:
+                dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                dest_socket.connect((node[0], node[1]))
+                # print("LOG get_chain_from_peer: Connected to peer.", file=self.log_file)
+
+                msg = ["GET-BLOCK", " ", str(curr_id), "\n"]
+                msg_bytes = "".join(msg).encode()
+
+                # print("LOG get_chain_from_peer: Requesting block ID", str(curr_id), file=self.log_file)
+
+                dest_socket.sendall(msg_bytes)
+
+                dest_socket_helper = SocketHelper(dest_socket)
+                header = dest_socket_helper.get_data_until_newline().decode()
+
+                header_arr = header.split(' ')
+                block_len = int(header_arr[1])
+
+                block_encoded = dest_socket_helper.get_n_bytes_of_data(block_len)
+                block_builder = Block()
+                block = block_builder.from_bytes(block_encoded)
+
+                if block.id == -1:
+                    # print("LOG get_chain_from_peer: Found end of chain.", file=self.log_file)
+                    dest_socket.close()
+                    break
+
+                elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
+                    # print("LOG get_chain_from_peer: Added block", file=self.log_file)
+                    peer_chain.add_block(block)
+                else:
+                    # print("LOG get_chain_from_peer: found bad chain", file=self.log_file)
+                    bad_chain = True
+                    dest_socket.close()
+                    break
+
+                dest_socket.close()
+
+                curr_id += 1
+
+            if not bad_chain and len(peer_chain.chain) > len(best_chain.chain):
+                best_chain = peer_chain
+        
+        self.blockchain = best_chain
+
         #TODO: Might want to wait for the peer to be registered
         with self.state_lock:
             self.state = State.MINING
@@ -323,7 +398,7 @@ class Peer:
         peer_socket.sendall(all_bytes)
 
     def broadcast_block_to_all_peers(self, block):
-        print("LOG broadcast_block_to_all_peers: broadcasting block")
+        print(f"LOG broadcast_block_to_all_peers: broadcasting block {block.id}", file=self.log_file)
         
         # dont broadcast during shutdown
         if self.shutdown_event.is_set():
@@ -358,7 +433,7 @@ class Peer:
         """
         Mine for a block that contains a single transaction
         """
-        print("LOG mine: Start mining thread")
+        # print("LOG mine: Start mining thread", file=self.log_file)
         nonce = 0
         current_txn = None
         mine_id = 0
@@ -400,23 +475,25 @@ class Peer:
                 nonce += 1
                 new_block = Block.mine(mine_id, [current_txn], prev_hash, nonce, timestamp, self.difficulty)
                 if new_block:
-                    print("LOG mine: found a new block!")
+                    print(f"LOG mine: found a new block {new_block.id}", file=self.log_file)
                     with self.blockchain_lock:
                         if self.blockchain.is_new_block_repeat_poll(new_block):
-                            print("LOG mine: rejecting poll creation block due to poll already existing in the chain")
+                            print("LOG mine: rejecting poll creation block due to poll already existing in the chain", file=self.log_file)
                         else:
                             latest_block = self.blockchain.get_latest_block()
                             if not latest_block or (latest_block.id+1 == mine_id):
-                                print("LOG mine: found valid block, adding to chain")
+                                print("LOG mine: found valid block, adding to chain", file=self.log_file)
                                 self.blockchain.add_block(new_block)
                                 if self.broadcast_freq == None or self.curr_step % self.broadcast_freq == 0:
-                                    print("LOG mine: broadcasting block to all peers")
+                                    # print("LOG mine: broadcasting block to all peers", file=self.log_file)
                                     if self.tamper_freq != None and self.curr_step % self.tamper_freq == 0:
-                                        print("LOG mine: tampering with block hash (for testing)")
+                                        print("LOG mine: tampering with block hash (for testing)", file=self.log_file)
                                         new_block.hash = 12345
                                     self.broadcast_block_to_all_peers(new_block)
                                 if self.broadcast_freq != None or self.tamper_freq != None:
                                     self.curr_step += 1
+                                chain = [f"id: {blk.id}" for blk in self.blockchain.chain]
+                                print(f"LOG mine: current state of blockchain: {chain}", file=self.log_file)
                             else:
                                 with self.txn_lock:
                                     self.txns.appendleft(current_txn)
@@ -424,7 +501,7 @@ class Peer:
                     nonce = 0
                     break
             
-        print("LOG mine: Mining thread terminated")
+        # print("LOG mine: Mining thread terminated", file=self.log_file)
 
     def create_txn(self, data_dict):
         """
@@ -437,7 +514,7 @@ class Peer:
         txn = Transaction(public_key_bytes, time.time(), data_dict)
         txn.sign(self.private_key)
         with self.txn_lock:
-            print("LOG create_txn: submitted mining job.")
+            print(f"LOG create_txn: submitted mining job {data_dict}", file=self.log_file)
             self.txns.append(txn)
 
     def get_chain(self):

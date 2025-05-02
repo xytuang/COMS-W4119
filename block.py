@@ -54,21 +54,21 @@ class Block:
         
         # check if the recomputed hash equals to the stoed hash inside the block
         if recomputed_hash != self.hash:
-            print("LOG block.is_valid: recomputed hash:", recomputed_hash)
-            print("LOG block.is_valid: own hash:", self.hash)
-            print("LOG block.is_valid: recomputed hash not same as current hash")
+            # print("LOG block.is_valid: recomputed hash:", recomputed_hash)
+            # print("LOG block.is_valid: own hash:", self.hash)
+            # print("LOG block.is_valid: recomputed hash not same as current hash")
             return False
         
         # then, check if that hash starts with enough zeros
         if not (len(self.hash) < difficulty or self.hash.startswith('0' * difficulty)):
-            print("does  not meet difficulty")
+            # print("does  not meet difficulty")
             return False
         
         for txn in self.txns:
             valid_signature = txn.verify()
 
             if not valid_signature:
-                print("invalid signature")
+                # print("invalid signature")
                 return False
 
         return True

@@ -22,7 +22,7 @@ def find_poll(peer, poll_identifier, using_id=True):
     for block in chain:
         for txn in block.txns:
             txn_data = txn.data
-            print("LOG find_poll txn_data:", txn_data)
+            # print("LOG find_poll txn_data:", txn_data)
             if txn_data["transaction_type"] == "create_poll" and txn_data[poll_field] == poll_identifier:
                 return txn_data
     return None
@@ -68,11 +68,11 @@ def get_poll_results(peer, poll_id):
     for block in chain:
         for txn in block.txns:
             txn_data = txn.data
-            print(txn_data)
+            # print(txn_data)
             if txn_data["poll_id"] == poll_id and txn_data["transaction_type"] == "vote":
                 voted_option = txn_data["vote"]
-                print(f"voted_option: {voted_option}")
-                print(f"Found voted option: {voted_option in options}")
+                # print(f"voted_option: {voted_option}")
+                # print(f"Found voted option: {voted_option in options}")
                 options_count[voted_option] += 1
     
     return options_count
