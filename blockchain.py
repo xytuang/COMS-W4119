@@ -74,7 +74,7 @@ class Blockchain:
 
     def can_add_block_to_chain(self, new_block):
         if new_block.id != len(self.chain):
-            print("LOG can_add_block_to_chain: rejected block due to invalid block id")
+            print(f"LOG can_add_block_to_chain: can't add block due to invalid block id (new id: {str(new_block.id)}, chain length: {str(len(self.chain))})")
             return False
 
         if len(self.chain) == 0:

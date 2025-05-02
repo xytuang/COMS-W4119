@@ -131,9 +131,7 @@ class Peer:
                 # if just a timeout, continue and check check shutdown flag
                 continue
             except Exception as e:
-                if self.shutdown_event.is_set():
-                    break
-                print(f"LOG process_peer_connections: Error in process_peer_connections: {e}")
+                print(f"LOG process_peer_connections: Error in process_peer_connections (may be expected if closing): {e}")
         print("LOG process_peer_connections: Listening thread terminated")
         
     def poll_from_rcv_buffer(self):
@@ -152,7 +150,7 @@ class Peer:
                 continue
 
             if data["type"] == "BLOCK":
-                print("LOG poll_from_rcv_buffer: received block data: ", data))
+                print("LOG poll_from_rcv_buffer: received block data: ", data)
 
                 block = data["payload"]
                 _id = block.id
@@ -170,7 +168,7 @@ class Peer:
                         self.blockchain.add_block(block)
                     # If the incoming block is valid and has more work done, potential fork
                     elif _id > len(self.blockchain.chain):
-                        print("LOG poll_from_rcv_buffer: Detected fork, resolving")
+                        print(f"LOG poll_from_rcv_buffer: Detected fork (new id: {str(_id)}, chain len: {len(self.blockchain.chain)}), resolving")
                         # Forking logic :)
                         # Set state to wait-mode where all we are looking for are
                         # get block responses
@@ -332,19 +330,12 @@ class Peer:
             return
 
         nodes_serialized = self.request_nodes_from_tracker()
-        # adding a check here in case a failure cause errors in shutdown 
-        if not nodes_serialized:
-            print("Failed to get nodes from tracker")
-            return
         nodes = self.parse_serialized_nodes(nodes_serialized)
 
         self.send_lock.acquire()
 
         try:
             for node in nodes:
-                if self.shutdown_event.is_set():
-                    break
-  
                 try:
                     dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                     dest_socket.connect((node[0], node[1]))
@@ -395,10 +386,6 @@ class Peer:
             timestamp = time.time()
             for _ in range(100):
                 if self.shutdown_event.is_set():
-                    if current_txn:
-                        with self.txn_lock: 
-                            # no txns lost during shutdown
-                            self.txns.appendleft(current_txn)
                     break
                 
                 with self.blockchain_lock:
@@ -436,9 +423,6 @@ class Peer:
                     current_txn = None
                     nonce = 0
                     break
-
-            if self.shutdown_event.is_set():
-                break
             
         print("LOG mine: Mining thread terminated")
 
