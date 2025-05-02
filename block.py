@@ -54,9 +54,9 @@ class Block:
         
         # check if the recomputed hash equals to the stoed hash inside the block
         if recomputed_hash != self.hash:
-            print("recomputed hash", recomputed_hash)
-            print("own hash", self.hash)
-            print("recomputed hash not same as current hash")
+            print("LOG block.is_valid: recomputed hash:", recomputed_hash)
+            print("LOG block.is_valid: own hash:", self.hash)
+            print("LOG block.is_valid: recomputed hash not same as current hash")
             return False
         
         # then, check if that hash starts with enough zeros
