@@ -186,6 +186,7 @@ class Peer:
 
                         peer_ip_addr = data["peer_ip_addr"]
                         peer_chain = self.get_chain_from_peer(peer_ip_addr, block.txns[0].sender)
+
                         if peer_chain != None and len(peer_chain.chain) > len(self.blockchain.chain): # peer's chain is longer, we switch to it
                             # Update logic to find fork point and remine transactions in lost blocks
                             # idx is set to the fork point after the while loop
@@ -196,18 +197,19 @@ class Peer:
                                 if peer_block_hash == own_block_hash:
                                     idx += 1
                                     continue
-                                break
+                                else:
+                                    break
                             
                             # grab all the lost transactions in the shorter chain
                             lost_txns = []
                             public_key_bytes = self.public_key_to_bytes()
                             chain_len = len(self.blockchain.chain)
+
                             for i in range(idx, chain_len):
                                 blk = self.blockchain.chain[i]
                                 for txn in blk.txns:
                                     if txn.sender == public_key_bytes:
                                         lost_txns.append(txn)
-
                             # We need to traverse lost_txns in reverse order
                             # Newer txns are at the back of lost_txns
                             # We are using appendleft to append to the front of self.txns
@@ -217,7 +219,6 @@ class Peer:
                                     self.txns.appendleft(txn)
 
                             self.blockchain = peer_chain
-
                         with self.state_lock:
                             if self.shutdown_event.is_set():
                                 break
