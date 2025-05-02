@@ -50,9 +50,21 @@ def process_peer_requests(peer):
     join_header_bytes = peer_socket_helper.get_data_until_newline()
 
     # If the node disconnects or breaks protocol, terminate the thread immediately
-    if join_header_bytes == None or join_header_bytes.decode() != "JOIN":
+    if join_header_bytes == None:
         return
 
+    # handle LEAVE message at connection
+    join_header = join_header_bytes.decode()
+    if join_header == "LEAVE":
+        print(f"Peer at {peer.addr[0]} is leaving the network")
+        peer.socket.close()
+        if hasattr(peer, 'pub_id') and peer.pub_id in active_peers:
+            delete_peer(peer.pub_id)
+        return
+    
+    if join_header != "JOIN":
+        return
+    
     # Used to tell other peers which port to connect to
     peer_listening_port = peer_socket_helper.get_data_until_newline().decode()
     peer.listening_port = peer_listening_port
@@ -89,7 +101,10 @@ def process_peer_requests(peer):
 
         header = header_bytes.decode()
         header_arr = header.split(' ')
-        if header_arr[0] == "LIST":
+        if header_arr[0] == "LEAVE":
+            print("Peer at {peer.addr[0]} is leaving the network")
+            break
+        elif header_arr[0] == "LIST":
             print("Serving LIST request")
 
             pub_id_len = int(header_arr[1])
@@ -126,7 +141,8 @@ def process_peer_requests(peer):
 
     # If connection closed, remove peer from list
     peer.socket.close()
-    delete_peer(peer.pub_id)
+    if hasattr(peer, 'pub_id'):
+        delete_peer(peer.pub_id)
 
     print("Disconnected peer at " + str(peer.addr))
     

@@ -2,6 +2,7 @@ import sys
 import uuid
 import time
 
+from enums import State
 from peer import Peer
 
 
@@ -126,6 +127,65 @@ def is_int(input_str, rng=None):
         return False
     except ValueError:
         return False
+    
+def shutdown(peer):
+    """
+    Shutdown procedure for a peer
+    
+    Args:
+        peer (Peer): the peer instance to shut down
+    """
+    
+    print("\nStarting shutdown procedure...")
+    
+    with peer.state_lock:
+        peer.state = State.SHUTTING_DOWN
+    
+    peer.shutdown_event.set() # signal all threads to terminate
+    
+    # 1. closing tracker connection
+    print("Closing connection to tracker...")
+    try:
+        with peer.tracker_lock:
+            try:
+                leave_msg = "LEAVE\n"
+                peer.tracker_socket.sendall(leave_msg.encode())
+            except Exception as e:
+                print(f"Failed to send leave message: {e}")
+            
+            peer.tracker_socket.close()
+    except Exception as e:
+        print(f"Error closing tracker connnection: {e}")        
+    
+    # 2. closing listening socket
+    print("Closing listenning port...")
+    try:
+        peer.listening_sock.close()
+    except Exception as e:
+        print(f"Error closing listening socket: {e}")
+        
+    print("Waiting for threads to finish...")
+    
+    timeout = 3 # avoid hanging
+    # join the threads with timeout (smae for all three threads)
+    if hasattr(peer, 'listening_thread') and peer.listening_thread.is_alive():
+        peer.listening_thread.join(timeout)
+        if peer.listening_thread.is_alive():
+            print("Warning: listening thread didn't terminate properly!")
+            
+    if hasattr(peer, 'polling_thread') and peer.polling_thread.is_alive():
+        peer.polling_thread.join(timeout)
+        if peer.polling_thread.is_alive():
+            print("Warning: polling thread didn't terminate properly!")
+
+    if hasattr(peer, 'mining_thread') and peer.mining_thread.is_alive():
+        peer.mining_thread.join(timeout)
+        if peer.mining_thread.is_alive():
+            print("Warning: mining thread didn't terminate properly!")
+        
+    print("Peer all shut down")
+    
+    
 
 def parse_sim_file(sim_file, peer):
     with open(sim_file, 'r') as f:
@@ -186,97 +246,107 @@ if __name__ == '__main__':
     number_of_options = 5
     option_str = "Pick an option:\n 1. Create poll\n 2. Display available polls\n 3. Vote for a poll\n 4. See poll results\n 5. Quit\n"
 
-    # we can shift this while loop to the application layer, but place it here for now
-    while True:
-        print("-------------------------------------------")
-        selected_option_str = input(option_str)
+    try:
+        # we can shift this while loop to the application layer, but place it here for now
+        while True:
+            print("-------------------------------------------")
+            selected_option_str = input(option_str)
 
-        if not is_int(selected_option_str, [1, number_of_options]):
-            print("You must provide a valid integer!")
-            continue
-
-        selected_option = int(selected_option_str)
-
-        if selected_option == 1: # Create a poll
-            poll_name = input("Enter poll name: ")
-            existing_poll = find_poll(peer, poll_name, False)
-
-            if existing_poll:
-                print("Poll name already exists!")
+            if not is_int(selected_option_str, [1, number_of_options]):
+                print("You must provide a valid integer!")
                 continue
 
-            num_poll_options_str = input("How many poll options do you want? ")
+            selected_option = int(selected_option_str)
 
-            while True:
-                if not is_int(num_poll_options_str, [2, float("inf")]): # num_polls must be at least  2. If not there will nothing to vote for (duh)
-                    print("Enter a valid number!")
-                    num_poll_options_str = input("How many poll options do you want? ")
+            if selected_option == 1: # Create a poll
+                poll_name = input("Enter poll name: ")
+                existing_poll = find_poll(peer, poll_name, False)
+
+                if existing_poll:
+                    print("Poll name already exists!")
                     continue
 
+                num_poll_options_str = input("How many poll options do you want? ")
+
+                while True:
+                    if not is_int(num_poll_options_str, [2, float("inf")]): # num_polls must be at least  2. If not there will nothing to vote for (duh)
+                        print("Enter a valid number!")
+                        num_poll_options_str = input("How many poll options do you want? ")
+                        continue
+
+                    break
+
+                num_poll_options = int(num_poll_options_str)
+
+                # Collect the poll options
+                poll_options = []
+
+                while len(poll_options) < num_poll_options:
+                    option = input("Enter poll option: ")
+                    if option in poll_options:
+                        print("This option has already been added, add another option!")
+                        continue
+                    poll_options.append(option)
+
+                create_poll(peer, poll_name, poll_options)
+
+            elif selected_option == 2: # Display all available polls
+                all_polls = get_all_polls(peer)
+                if len(all_polls) == 0:
+                    print("No available polls right now")
+                    continue
+
+                for poll in all_polls:
+                    poll_name = poll["poll_name"]
+                    options = poll["options"]
+
+                    print(f"Poll name: {poll_name}")
+                    print(f"Options: {options}\n")
+    
+            elif selected_option == 3: # Vote for a particular poll
+                poll_name = input("Which poll do you want to vote for? ")
+                existing_poll = find_poll(peer, poll_name, False)
+                if not existing_poll:
+                    print(f"Poll {poll_name} does not exist!")
+                    continue
+
+                poll_options = existing_poll["options"]
+                print(f"Here are the available options for {poll_name}:")
+
+                for i in range(len(poll_options)):
+                    print(f"{i + 1}: {poll_options[i]}")
+
+                selected_option_str = input("Which option do you want to vote for? ")
+
+                if selected_option_str not in existing_poll["options"]:
+                    print("Enter a valid option!")
+                    continue
+
+                vote(peer, existing_poll["poll_id"], selected_option_str)
+                # create a transaction for this vote
+            elif selected_option == 4: # Display results for a poll
+                poll_name = input("Which poll do you want to see? ")
+                existing_poll = find_poll(peer, poll_name, False)
+                if not existing_poll:
+                    print(f"Poll {poll_name} does not exist!")
+                    continue
+                
+                poll_results = get_poll_results(peer, existing_poll["poll_id"]) # we can probably get a nice formatter to print the results
+                print(poll_results)
+
+            elif selected_option == 5: # Quit, handle closing logic outside while loop
+                print("Start shutting down...")
+                shutdown(peer)
                 break
+    except Exception as e:
+        print(f"\nUnexpected error: {e}")
+        try:
+            shutdown(peer)
+        except:
+            print("Error shutting down after exception")
+        raise
 
-            num_poll_options = int(num_poll_options_str)
-
-            # Collect the poll options
-            poll_options = []
-
-            while len(poll_options) < num_poll_options:
-                option = input("Enter poll option: ")
-                if option in poll_options:
-                    print("This option has already been added, add another option!")
-                    continue
-                poll_options.append(option)
-
-            create_poll(peer, poll_name, poll_options)
-
-        elif selected_option == 2: # Display all available polls
-            all_polls = get_all_polls(peer)
-            if len(all_polls) == 0:
-                print("No available polls right now")
-                continue
-
-            for poll in all_polls:
-                poll_name = poll["poll_name"]
-                options = poll["options"]
-
-                print(f"Poll name: {poll_name}")
-                print(f"Options: {options}\n")
- 
-        elif selected_option == 3: # Vote for a particular poll
-            poll_name = input("Which poll do you want to vote for? ")
-            existing_poll = find_poll(peer, poll_name, False)
-            if not existing_poll:
-                print(f"Poll {poll_name} does not exist!")
-                continue
-
-            poll_options = existing_poll["options"]
-            print(f"Here are the available options for {poll_name}:")
-
-            for i in range(len(poll_options)):
-                print(f"{i + 1}: {poll_options[i]}")
-
-            selected_option_str = input("Which option do you want to vote for? ")
-
-            if selected_option_str not in existing_poll["options"]:
-                print("Enter a valid option!")
-                continue
-
-            vote(peer, existing_poll["poll_id"], selected_option_str)
-            # create a transaction for this vote
-        elif selected_option == 4: # Display results for a poll
-            poll_name = input("Which poll do you want to see? ")
-            existing_poll = find_poll(peer, poll_name, False)
-            if not existing_poll:
-                print(f"Poll {poll_name} does not exist!")
-                continue
-            
-            poll_results = get_poll_results(peer, existing_poll["poll_id"]) # we can probably get a nice formatter to print the results
-            print(poll_results)
-
-        elif selected_option == 5: # Quit, handle closing logic outside while loop
-            break        
-
-    print("Closing...")
+    print("Closed successfully")
     ################################################################ Get blockchain test
     # print(peer.get_port_from_peer_id(peer.public_key_to_bytes()))
     # dumb_chain = Blockchain()
