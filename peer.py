@@ -370,12 +370,17 @@ class Peer:
         nonce = 0
         current_txn = None
         mine_id = 0
-
+        state_logged = False # this is to prevent the "mine: skipped ..." msg from repeating many times (cleaner output)
         while not self.shutdown_event.is_set():
             with self.state_lock:
                 if self.state != State.MINING:
-                    print("mine: skipped mining because state wasn't in mining mode")
+                    if not state_logged: # just print the msg once
+                        print("mine: skipped mining because state wasn't in mining mode")
+                        state_logged = True
+                    time.sleep(0.01)
                     continue
+            
+            state_logged = False # reset the flag when transitioning to mining state
             with self.txn_lock:
                 if len(self.txns) == 0 and not current_txn:
                     continue
