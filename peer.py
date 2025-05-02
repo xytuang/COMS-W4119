@@ -31,6 +31,8 @@ class Peer:
 
         self.debug = debug
 
+        self.shutdown_event = threading.Event()
+
         self.listening_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listening_sock.bind(('', listening_port))
         self.listening_thread = threading.Thread(target=self.process_peer_connections, args=(self.listening_sock,))
@@ -61,7 +63,6 @@ class Peer:
         self.mining_thread = threading.Thread(target=self.mine)
         self.mining_thread.start()
 
-        self.shutdown_event = threading.Event()
         
     def read_from_vote_file(self, vote_file):
         if not vote_file:
