@@ -15,7 +15,7 @@ import json
 MAX_QUEUED_CONNECTIONS = 5
 
 class Peer:
-    def __init__(self, tracker_addr, tracker_port, listening_port, difficulty=4, vote_file=None, debug=False):
+    def __init__(self, tracker_addr, tracker_port, listening_port, difficulty=4, debug=False):
         self.listening_port = listening_port
         self.tracker_addr = tracker_addr
         self.tracker_port = tracker_port
@@ -61,17 +61,21 @@ class Peer:
         self.mining_thread = threading.Thread(target=self.mine)
         self.mining_thread.start()
 
-    def read_from_vote_file(self, vote_file):
-        if not vote_file:
-            return []
+        self.tamper_freq = None
+        self.broadcast_freq = None
+        self.curr_step = 0
 
-        votes = []
-        with open(vote_file, "r") as f:
-            for line in f:
-                if line.strip():
-                    votes.append(line.strip())
-        print("votes", votes)
-        return votes
+    def set_configs_from_file(self, config_file):
+        print("LOG set_configs_from_file: setting configurations...")
+        config_data = None
+        with open(config_file, 'r') as f:
+            config_data = json.load(f)
+            if "tamper_freq" in config_data:
+                self.tamper_freq = config_data["tamper_freq"]
+                print("LOG set_configs_from_file: Block tamper frequency (for testing resiliency to bad data):", str(self.tamper_freq))
+            if "broadcast_freq" in config_data:
+                self.broadcast_freq = config_data["broadcast_freq"]
+                print("LOG set_configs_from_file: Block broadcast frequency (for testing forks):", str(self.broadcast_freq))
 
     def public_key_to_bytes(self):
         public_key_bytes = self.public_key.public_bytes(
@@ -81,15 +85,15 @@ class Peer:
         return public_key_bytes
 
     def process_peer_connections(self, listening_sock):
-        print("Started listening thread.")
+        print("LOG process_peer_connections: Started listening thread.")
         listening_sock.listen(MAX_QUEUED_CONNECTIONS)
         while True:
             peer_socket, addr = listening_sock.accept()
             peer_socket_helper = SocketHelper(peer_socket)
-            print("process_peer_connections: Connected to new peer.")
+            print("LOG process_peer_connections: Connected to new peer.")
             header = peer_socket_helper.get_data_until_newline().decode()
             header_arr = header.split(' ')
-            print("process_peer_connections: found header", header_arr)
+            print("LOG process_peer_connections: found header", header_arr)
             if header_arr[0] == "BLOCK":
                 block_len = int(header_arr[1])
                 block_encoded = peer_socket_helper.get_n_bytes_of_data(block_len)
@@ -114,12 +118,14 @@ class Peer:
 
                 self.send_block_to_peer(requested_block, "EXIST", peer_socket)
             else:
-                print("Unsupported header type")
+                print("LOG process_peer_connections: Unsupported header type")
 
             peer_socket.close()
 
     def poll_from_rcv_buffer(self):
         while True:
+            # To avoid throttling the CPU
+            time.sleep(0.001)
             data = None
             self.rcv_buffer_lock.acquire()
             if len(self.rcv_buffer) > 0:
@@ -131,12 +137,13 @@ class Peer:
                 continue
 
             if data["type"] == "BLOCK":
-                print(data)
+                print("LOG poll_from_rcv_buffer: received block data: ", data)
 
                 block = data["payload"]
                 _id = block.id
 
                 if not block.is_valid(self.difficulty):
+                    print("LOG poll_from_rcv_buffer: received invalid block, discarding")
                     continue
 
                 with self.blockchain_lock:
@@ -144,11 +151,11 @@ class Peer:
 
                     # Hash matches and the block ID is the next expected one
                     if self.blockchain.can_add_block_to_chain(block):
-                        print(f"added block {block.id} to chain")
+                        print(f"LOG poll_from_rcv_buffer: added block {block.id} to chain")
                         self.blockchain.add_block(block)
                     # If the incoming block is valid and has more work done, potential fork
                     elif _id > len(self.blockchain.chain):
-                        print("Forking")
+                        print("LOG poll_from_rcv_buffer: Detected fork, resolving")
                         # Forking logic :)
                         # Set state to wait-mode where all we are looking for are
                         # get block responses
@@ -156,17 +163,16 @@ class Peer:
                             self.state = State.WAITING_FOR_CHAIN
 
                         peer_ip_addr = data["peer_ip_addr"]
-                        peer_chain = self.get_chain_from_peer(peer_ip_addr, self.public_key_to_bytes())
-                        if peer_chain != None and len(peer_chain) > len(self.blockchain.chain):
+                        peer_chain = self.get_chain_from_peer(peer_ip_addr, block.txns[0].sender)
+                        if peer_chain != None and len(peer_chain.chain) > len(self.blockchain.chain):
                             self.blockchain = peer_chain
 
                         with self.state_lock:
                             self.state = State.MINING
+                    else:
+                        print("LOG poll_from_rcv_buffer: Could not add block to chain and did not detect a fork, discarding")
             else:
-                print("rcv_buffer: got unsupported data type, ignoring")
-
-            # To avoid throttling the CPU
-            time.sleep(0.001)
+                print("LOG poll_from_rcv_buffer: got unsupported data type, ignoring")
 
     def get_port_from_peer_id(self, peer_pub_id):
         msg = ["GET-PEER", " ", str(len(peer_pub_id)), "\n"]
@@ -175,15 +181,15 @@ class Peer:
 
         self.tracker_socket.sendall(msg_bytes)
         header_bytes = self.tracker_socket_helper.get_data_until_newline()
-        print(header_bytes)
         header = header_bytes.decode()
 
         if header != "PEER-PORT":
-            print("Invalid header, expected PEER-PORT")
+            print("LOG get_port_from_peer_id: Invalid header, expected PEER-PORT")
             self.tracker_lock.release()
             return None
 
         port = self.tracker_socket_helper.get_data_until_newline()
+        print("LOG get_port_from_peer_id: got port", port)
 
         self.tracker_lock.release()
 
@@ -203,9 +209,12 @@ class Peer:
         while True:
             dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             dest_socket.connect((peer_addr, listening_port))
+            print("LOG get_chain_from_peer: Connected to peer.")
 
             msg = ["GET-BLOCK", " ", str(curr_id), "\n"]
             msg_bytes = "".join(msg).encode()
+
+            print("LOG get_chain_from_peer: Requesting block ID", str(curr_id))
 
             dest_socket.sendall(msg_bytes)
 
@@ -220,14 +229,14 @@ class Peer:
             block = block_builder.from_bytes(block_encoded)
 
             if block.id == -1:
-                print("get_chain_from_peer: Found end of chain.")
+                print("LOG get_chain_from_peer: Found end of chain.")
                 dest_socket.close()
                 break
-            elif self.debug or block.is_valid(difficulty=4) and peer_chain.can_add_block_to_chain(block):
-                print("get_chain_from_peer: Added block")
+            elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
+                print("LOG get_chain_from_peer: Added block")
                 peer_chain.add_block(block)
             else:
-                print("get_chain_from_peer: found bad chain")
+                print("LOG get_chain_from_peer: found bad chain")
                 bad_chain = True
                 dest_socket.close()
                 break
@@ -294,7 +303,7 @@ class Peer:
         peer_socket.sendall(all_bytes)
 
     def broadcast_block_to_all_peers(self, block):
-        print("broadcast_block_to_all_peers: broadcasting block")
+        print("LOG broadcast_block_to_all_peers: broadcasting block")
         nodes_serialized = self.request_nodes_from_tracker()
         nodes = self.parse_serialized_nodes(nodes_serialized)
 
@@ -302,8 +311,6 @@ class Peer:
         for node in nodes:
             curr_ip = socket.gethostbyname(socket.gethostname())
             # Don't broadcast node to yourself
-            print(node[0])
-            print(node[1])
             if node[0] == curr_ip and node[1] == self.listening_port:
                 continue
             dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -318,15 +325,16 @@ class Peer:
         """
         Mine for a block that contains a single transaction
         """
-        print("Start mining")
+        print("LOG mine: Start mining thread")
         nonce = 0
         current_txn = None
         mine_id = 0
 
         while True:
+            time.sleep(0.001)
             with self.state_lock:
                 if self.state != State.MINING:
-                    print("mine: skipped mining because state wasn't in mining mode")
+                    #print("mine: skipped mining because state wasn't in mining mode")
                     continue
             with self.txn_lock:
                 if len(self.txns) == 0 and not current_txn:
@@ -356,20 +364,30 @@ class Peer:
                 nonce += 1
                 new_block = Block.mine(mine_id, [current_txn], prev_hash, nonce, timestamp, self.difficulty)
                 if new_block:
-                    print("found a new block!")
+                    print("LOG mine: found a new block!")
                     with self.blockchain_lock:
-                        latest_block = self.blockchain.get_latest_block()
-                        if not latest_block or (latest_block.id+1 == mine_id):
-                            print("mine: found valid block")
-                            self.blockchain.add_block(new_block)
-                            self.broadcast_block_to_all_peers(new_block)
+                        if self.blockchain.is_new_block_repeat_poll(new_block):
+                            print("LOG mine: rejecting poll creation block due to poll already existing in the chain")
                         else:
-                            with self.txn_lock:
-                                self.txns.appendleft(current_txn)
+                            latest_block = self.blockchain.get_latest_block()
+                            if not latest_block or (latest_block.id+1 == mine_id):
+                                print("LOG mine: found valid block, adding to chain")
+                                self.blockchain.add_block(new_block)
+                                if self.broadcast_freq == None or self.curr_step % self.broadcast_freq == 0:
+                                    print("LOG mine: broadcasting block to all peers")
+                                    if self.tamper_freq != None and self.curr_step % self.tamper_freq == 0:
+                                        print("LOG mine: tampering with block hash (for testing)")
+                                        new_block.hash = 12345
+                                    self.broadcast_block_to_all_peers(new_block)
+                                if self.broadcast_freq != None or self.tamper_freq != None:
+                                    self.curr_step += 1
+                            else:
+                                with self.txn_lock:
+                                    self.txns.appendleft(current_txn)
                     current_txn = None
                     nonce = 0
                     break
-            time.sleep(0.1)
+            
 
     def create_txn(self, data_dict):
         """
@@ -382,6 +400,7 @@ class Peer:
         txn = Transaction(public_key_bytes, time.time(), data_dict)
         txn.sign(self.private_key)
         with self.txn_lock:
+            print("LOG create_txn: submitted mining job.")
             self.txns.append(txn)
 
     def get_chain(self):

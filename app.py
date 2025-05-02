@@ -1,5 +1,6 @@
 import sys
 import uuid
+import time
 
 from peer import Peer
 
@@ -15,12 +16,13 @@ def find_poll(peer, poll_identifier, using_id=True):
     Returns:
         dict: A dictionary describing the poll, with its id, name and options
     """
-    poll_field = "poll_id" if using_id else "poll_name" 
+    poll_field = "poll_id" if using_id else "poll_name"
     chain = peer.get_chain()
     for block in chain:
         for txn in block.txns:
             txn_data = txn.data
-            if txn_data[poll_field] == poll_identifier and txn_data["transaction_type"] == "create_poll":
+            print("LOG find_poll txn_data:", txn_data)
+            if txn_data["transaction_type"] == "create_poll" and txn_data[poll_field] == poll_identifier:
                 return txn_data
     return None
 
@@ -125,6 +127,32 @@ def is_int(input_str, rng=None):
     except ValueError:
         return False
 
+def parse_sim_file(sim_file, peer):
+    with open(sim_file, 'r') as f:
+        for line in f:
+            line_strp = line.strip()
+            data_arr = line_strp.split(' ')
+            if data_arr[0] == "CREATE":
+                poll_name = data_arr[1]
+                options = []
+                for i in range(2, len(data_arr)):
+                    options.append(data_arr[i])
+                create_poll(peer, poll_name, options)
+                print(f"Created poll with {poll_name} and options {str(options)}")
+            elif data_arr[0] == "VOTE":
+                poll_name = data_arr[1]
+                poll = find_poll(peer, poll_name, using_id=False)
+                if poll == None:
+                    print("Did not find poll.")
+                    continue
+                option = data_arr[2]
+                vote(peer, poll["poll_id"], option)
+                print(f"Voted {option} on {poll_name}")
+            elif data_arr[0] == "SLEEP":
+                print(f"Sleeping for {str(data_arr[1])} s")
+                time.sleep(float(data_arr[1]))
+            else:
+                print("Unsupported command type")
 
 if __name__ == '__main__':
     listening_port = int(sys.argv[1])
@@ -136,12 +164,24 @@ if __name__ == '__main__':
     if len(sys.argv) >= 5:
         difficulty = int(sys.argv[4])
     
-    vote_file = None
+    config_file = None
     if len(sys.argv) >= 6:
-        vote_file = sys.argv[5]
+        config_file = sys.argv[5]
+        print(config_file)
 
-    peer = Peer(tracker_addr, tracker_port, listening_port, difficulty, vote_file, debug=True)
+    sim_file = None
+    if len(sys.argv) >= 7:
+        sim_file = sys.argv[6]
+
+    peer = Peer(tracker_addr, tracker_port, listening_port, difficulty, debug=True)
+
+    if config_file != None:
+        peer.set_configs_from_file(config_file)
+
     peer.send_join_message()
+
+    if sim_file != None:
+        parse_sim_file(sim_file, peer)
 
     number_of_options = 5
     option_str = "Pick an option:\n 1. Create poll\n 2. Display available polls\n 3. Vote for a poll\n 4. See poll results\n 5. Quit\n"
