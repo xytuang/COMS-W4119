@@ -319,24 +319,47 @@ class Peer:
 
     def broadcast_block_to_all_peers(self, block):
         print("broadcast_block_to_all_peers: broadcasting block")
+        
+        # dont broadcast during shutdown
+        if self.shutdown_event.is_set():
+            return
+        
         nodes_serialized = self.request_nodes_from_tracker()
+        # adding a check here in case a failure cause errors in shutdown 
+        if not nodes_serialized:
+            print("Failed to get nodes from tracker")
+            return
         nodes = self.parse_serialized_nodes(nodes_serialized)
 
         self.send_lock.acquire()
-        for node in nodes:
-            curr_ip = socket.gethostbyname(socket.gethostname())
-            # Don't broadcast node to yourself
-            print(node[0])
-            print(node[1])
-            if node[0] == curr_ip and node[1] == self.listening_port:
-                continue
-            dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            dest_socket.connect((node[0], node[1]))
-            
-            self.send_block_to_peer(block, "NEW", dest_socket)
+        try:
+            for node in nodes:
+                if self.shutdown_event.is_set():
+                    break
+                
+                curr_ip = socket.gethostbyname(socket.gethostname())
+                # Don't broadcast node to yourself
+                print(node[0])
+                print(node[1])
+                if node[0] == curr_ip and node[1] == self.listening_port:
+                    continue
+                try:
+                    dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                    dest_socket.connect((node[0], node[1]))
+                    
+                    self.send_block_to_peer(block, "NEW", dest_socket)
 
-            dest_socket.close()
-        self.send_lock.release()
+                    dest_socket.close()
+                except Exception as e:
+                    print(f"Error connecting to peer at {node[0]}:{node[1]}: {e}")
+                    try:
+                        dest_socket.close() # still gotta trying closing it
+                    except:
+                        pass
+        except Exception as e:
+            print(f"Error during broadcast: {e}")
+        finally:
+            self.send_lock.release()
     
     def mine(self):
         """
