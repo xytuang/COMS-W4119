@@ -28,7 +28,7 @@ sudo apt-get install build-essential libssl-dev libffi-dev \
 Once dependencies are installed, run the command below.
 
 ```code
-pip install cryptography
+pip install cryptography==35.0.0
 ```
 
 **How to run the code (INCOMPLETE)**
