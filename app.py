@@ -182,7 +182,8 @@ def shutdown(peer):
         peer.mining_thread.join(timeout)
         if peer.mining_thread.is_alive():
             print("Warning: mining thread didn't terminate properly!")
-        
+    
+    peer.log_file.close()
     print("Peer all shut down")
     
     
