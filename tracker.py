@@ -92,6 +92,10 @@ def process_peer_requests(peer):
     print("Peer ID (bytes):",peer.pub_id)
 
     #TODO: Might want to send ACK that the peer has been registered
+    # The ACK is really a list of all active peers
+    active_peers_str = serialize_active_peers(peer.pub_id)
+    active_peers_bytes = active_peers_str.encode()
+    peer.socket.sendall(active_peers_bytes)
 
     # Listen for request to send list of peers
     while True:

@@ -1,0 +1,7 @@
+CREATE pollA a b c
+SLEEP 3
+VOTE pollA a
+VOTE pollA b
+VOTE pollA c
+VOTE pollA c
+VOTE pollA c

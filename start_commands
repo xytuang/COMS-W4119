@@ -1,5 +1,6 @@
 python3 tracker.py 65001
 
-python3 app.py 65002 127.0.0.1 65001 2
-python3 app.py 65003 127.0.0.1 65001 2
-python3 app.py 65004 127.0.0.1 65001 2
+python3 app.py 65002 127.0.0.1 65001 4 config_1.json test_1_primary.txt
+python3 app.py 65003 127.0.0.1 65001 4 config_1.json test_1_secondary.txt
+python3 app.py 65004 127.0.0.1 65001 4 config_1.json test_1_secondary.txt
+python3 app.py 65005 127.0.0.1 65001 4 config_1.json test_1_secondary.txt
