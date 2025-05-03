@@ -104,6 +104,19 @@ We expect pollA to have one vote for a.
 
 Observations: We see the expected behavior, and it shows that the network can handle the leaving of the peer. In our case, the peer that created the poll left, but since the other peers had a copy of the blockchain in their own nodes, they were still able to vote on the poll and have it be consistent across the remaining two peers without issue.
 
+=====Basic Simulation Test=====
+
+This is another basic functionality test, except this time the tests take in a simulation file that will allow the peers to automatically run commands rather than relying solely manual input.
+
+Start the tracker: python3 tracker.py 50000
+
+Peer 1: python3 app.py 50003 127.0.0.1 50000 2 config_empty.json basic_sim_test/primary.txt
+Wait for a few seconds
+Peer 2: python3 app.py 50002 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt
+Peer 3: python3 app.py 50004 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt 
+
+Main thing to check here is that the nodes end up with the same result. Inputting 4 and checking pollA for each of the nodes reveal that this is indeed the case case (detailed logs also included).
+
 =====Outgoing Data Tamper Tests=====
 
 Available tests: "hash", "prev_hash", "txn_data"
@@ -382,7 +395,6 @@ Wait for all blocks to have been mined
 python3 app.py 50003 127.0.0.1 50000 2
 
 We see that in 50003_log.txt it detects the bad chain and does not adopt it.
-
 
 =====Stress Test=====
 
