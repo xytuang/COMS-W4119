@@ -1,0 +1,11 @@
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['GET-BLOCK', '0']
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['GET-BLOCK', '0']
+LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': 'c7d8b6c3-41b5-4e84-8c07-cde00a59a73f', 'poll_name': 'pollA', 'options': ['a', 'b']}
+LOG mine: found a new block 0
+LOG mine: found valid block, adding to chain
+LOG mine: broadcasting block to all peers
+LOG broadcast_block_to_all_peers: broadcasting block 0
+LOG mine: current state of blockchain: ['id: 0']
+LOG process_peer_connections: Listening thread terminated

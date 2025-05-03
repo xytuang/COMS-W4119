@@ -1,3 +1,109 @@
+=====Basic Test=====
+
+This test is manual and is just a simple test to make sure basic functionality works. All data is untampered with for this test, and all blocks are broadcast immediately after they are mined.
+
+Start the tracker: python3 tracker.py 50000
+
+Start the first peer: python3 app.py 50004 127.0.0.1 50000 2
+Start the second peer: python3 app.py 50003 127.0.0.1 50000 2
+Start the third peer: python3 app.py 50002 127.0.0.1 50000 2
+
+Peer 1 input: 1, create pollA with options a,b,c
+Peer 1 input: 3, vote for pollA, option a
+
+Wait a few seconds for the blocks to be mined.
+
+Peer 2 input: 4, view pollA
+
+We expect a to have 1 vote.
+
+Peer 3 input: 4, view pollA
+
+We expect a to have 1 vote.
+
+Peer 2 input: 3, vote for pollA, option b
+
+Wait a few seconds for the vote transaction block to be mined.
+
+Peer 1 input: input 4, view pollA
+
+We expect a and b to each have one vote.
+
+Peer 2 input: input 4, view pollA
+
+We expect a and b to each have one vote.
+
+Peer 3 input: input 4, view pollA
+
+We expect a and b to each have one vote.
+
+Peer 1 input: 1, create pollB with options x,y
+
+Peer 1 input: 3, vote for pollB, option x
+
+Wait a few seconds for the vote transaction block to be mined
+
+Peer 1 input: input 4, view pollB
+
+We expect x to have one vote.
+
+Peer 2 input: input 4, view pollB
+
+We expect x to have one vote.
+
+Peer 3 input: input 4, view pollB
+
+We expect x to have one vote.
+
+Observations: We see the expected behavior in the console. Logs are also included, and they show new blocks created (for poll creation and votes) and broadcasted when the respective peer mines them, as well as the peer recieving them.
+
+=====Peer Joining Test=====
+
+Start the tracker: python3 tracker.py 50000
+
+Start the first peer: python3 app.py 50002 127.0.0.1 50000 2
+
+Peer 1 input: 1, create pollA with options a,b,c
+Peer 1 input: 3, vote for pollA, option a
+Peer 1 input: 3, vote for pollA, option b
+Peer 1 input: 3, vote for pollA, option c
+
+Wait a few seconds for the blocks to be mined
+
+Start the second peer: python3 app.py 50003 127.0.0.1 50000 2
+
+Start the third peer: python3 app.py 50004 127.0.0.1 50000 2
+
+For all peers: input 4, view pollA
+
+Should see a,b,c with one vote each.
+
+Observations: When peers 2 and 3 join, they recieve the longest chain in the network. In this case this is Peer 1. We see in the included logs that Peer 1 mines the two blocks, and then serves GET-BLOCK requests to Peers 2 and 3. For Peer 2 we see it requesting the chain from 1 but also sending its chain to Peer 3 when Peer 3 joins so that Peer 3 can choose the longest chain it receives. And in Peer 3 logs we see it requesting chains from 1 and 2.
+
+=====Peer Leaving Test=====
+
+Start the tracker: python3 tracker.py 50000
+
+Start the first peer: python3 app.py 50002 127.0.0.1 50000 2
+Start the second peer: python3 app.py 50003 127.0.0.1 50000 2
+Start the third peer: python3 app.py 50004 127.0.0.1 50000 2
+
+Peer 1 input: 1, create pollA with options a,b,c
+
+For Peer 2 and Peer 3 input: 4, view pollA
+
+We expect pollA to exist with no votes.
+
+Peer 1 input: 5 (peer exits and leaves)
+
+Peer 2 input: 3, vote for pollA, option a
+
+For Peer 2 and Peer 3 input: 4, view pollA
+
+We expect pollA to have one vote for a.
+
+Observations: We see the expected behavior, and it shows that the network can handle the leaving of the peer. In our case, the peer that created the poll left, but since the other peers had a copy of the blockchain in their own nodes, they were still able to vote on the poll and have it be consistent across the remaining two peers without issue.
+
 =====Outgoing Data Tamper Tests=====
 
 Available tests: "hash", "prev_hash", "txn_data"
@@ -281,10 +387,23 @@ We see that in 50003_log.txt it detects the bad chain and does not adopt it.
 =====Stress Test=====
 
 Run in order:
+python3 tracker.py 50000
 python3 app.py 50004 127.0.0.1 50000 2 stress_test/config.json stress_test/primary.txt
 python3 app.py 50003 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt
 python3 app.py 50002 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt
 
 This tests a bunch of transactions at the same time to make sure that we can handle concurrent execution fine. The peers don't always broadcast their blocks and periodically tamper with the hashes to really stress the system.
+
+Peers will race against each other by nature of this test, so this is a good way to stress our forking logic to the max. We expect to see all the peers converge on the same chain in the end, and we observe the same console output for each of the peers once all the transactions have been processed:
+
+Pick an option:
+ 1. Create poll
+ 2. Display available polls
+ 3. Vote for a poll
+ 4. See poll results
+ 5. Quit
+4
+Which poll do you want to see? pollA
+{'a': 34, 'b': 54, 'c': 53}
 
 We see that at the end all peers have the same chain, which is what we want.

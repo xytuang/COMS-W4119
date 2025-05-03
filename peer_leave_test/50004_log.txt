@@ -1,0 +1,17 @@
+LOG send_join_message: Connected to peer.
+LOG send_join_message: Requesting block ID 0
+LOG send_join_message: Found end of chain.
+LOG send_join_message: Connected to peer.
+LOG send_join_message: Requesting block ID 0
+LOG send_join_message: Found end of chain.
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['BLOCK', '1336', 'NEW']
+LOG poll_from_rcv_buffer: received block data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x1043087d0>, 'peer_ip_addr': '127.0.0.1'}
+LOG poll_from_rcv_buffer: added block 0 to chain
+LOG poll_from_rcv_buffer: current state of blockchain: ['id: 0']
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['BLOCK', '1362', 'NEW']
+LOG poll_from_rcv_buffer: received block data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x1043089b0>, 'peer_ip_addr': '127.0.0.1'}
+LOG poll_from_rcv_buffer: added block 1 to chain
+LOG poll_from_rcv_buffer: current state of blockchain: ['id: 0', 'id: 1']
+LOG process_peer_connections: Listening thread terminated
