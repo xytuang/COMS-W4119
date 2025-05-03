@@ -199,7 +199,7 @@ def parse_sim_file(sim_file, peer):
                 for i in range(2, len(data_arr)):
                     options.append(data_arr[i])
                 create_poll(peer, poll_name, options)
-                print(f"Created poll with {poll_name} and options {str(options)}")
+                print(f"Submitted transaction for creating poll with {poll_name} and options {str(options)}")
             elif data_arr[0] == "VOTE":
                 poll_name = data_arr[1]
                 poll = find_poll(peer, poll_name, using_id=False)
@@ -208,7 +208,7 @@ def parse_sim_file(sim_file, peer):
                     continue
                 option = data_arr[2]
                 vote(peer, poll["poll_id"], option)
-                print(f"Voted {option} on {poll_name}")
+                print(f"Submitted transation for voting {option} on {poll_name}")
             elif data_arr[0] == "SLEEP":
                 print(f"Sleeping for {str(data_arr[1])} s")
                 time.sleep(float(data_arr[1]))
@@ -234,7 +234,7 @@ if __name__ == '__main__':
     if len(sys.argv) >= 7:
         sim_file = sys.argv[6]
 
-    peer = Peer(tracker_addr, tracker_port, listening_port, difficulty, debug=True)
+    peer = Peer(tracker_addr, tracker_port, listening_port, difficulty, debug=False)
 
     if config_file != None:
         peer.set_configs_from_file(config_file)

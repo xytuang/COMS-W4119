@@ -1,4 +1,5 @@
 {
 	"tamper_freq":3,
+	"tamper_type":"hash",
 	"broadcast_freq":2
 }

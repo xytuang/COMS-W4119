@@ -66,6 +66,7 @@ class Peer:
         self.mining_thread.start()
         
         self.tamper_freq = None
+        self.tamper_type = None
         self.broadcast_freq = None
         self.curr_step = 0
 
@@ -81,6 +82,8 @@ class Peer:
             if "broadcast_freq" in config_data:
                 self.broadcast_freq = config_data["broadcast_freq"]
                 # print("LOG set_configs_from_file: Block broadcast frequency (for testing forks):", str(self.broadcast_freq), file=self.log_file)
+            if "tamper_type" in config_data:
+                self.tamper_type = config_data["tamper_type"]
 
     def public_key_to_bytes(self):
         public_key_bytes = self.public_key.public_bytes(
@@ -340,12 +343,12 @@ class Peer:
             while True:
                 dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
                 dest_socket.connect((node[0], node[1]))
-                # print("LOG get_chain_from_peer: Connected to peer.", file=self.log_file)
+                print("LOG send_join_message: Connected to peer.", file=self.log_file)
 
                 msg = ["GET-BLOCK", " ", str(curr_id), "\n"]
                 msg_bytes = "".join(msg).encode()
 
-                # print("LOG get_chain_from_peer: Requesting block ID", str(curr_id), file=self.log_file)
+                print("LOG send_join_message: Requesting block ID", str(curr_id), file=self.log_file)
 
                 dest_socket.sendall(msg_bytes)
 
@@ -360,15 +363,15 @@ class Peer:
                 block = block_builder.from_bytes(block_encoded)
 
                 if block.id == -1:
-                    # print("LOG get_chain_from_peer: Found end of chain.", file=self.log_file)
+                    print("LOG send_join_message: Found end of chain.", file=self.log_file)
                     dest_socket.close()
                     break
 
                 elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
-                    # print("LOG get_chain_from_peer: Added block", file=self.log_file)
+                    print("LOG send_join_message: Added block", file=self.log_file)
                     peer_chain.add_block(block)
                 else:
-                    # print("LOG get_chain_from_peer: found bad chain", file=self.log_file)
+                    print("LOG send_join_message: found bad chain", file=self.log_file)
                     bad_chain = True
                     dest_socket.close()
                     break
@@ -509,17 +512,56 @@ class Peer:
                     with self.blockchain_lock:
                         if self.blockchain.is_new_block_repeat_poll(new_block):
                             print("LOG mine: rejecting poll creation block due to poll already existing in the chain", file=self.log_file)
+                        elif self.blockchain.is_new_block_vote_for_nonexistent_poll(new_block):
+                            print("LOG mine: rejecting vote due to poll not existing on the chain")
                         else:
                             latest_block = self.blockchain.get_latest_block()
                             if not latest_block or (latest_block.id+1 == mine_id):
                                 print("LOG mine: found valid block, adding to chain", file=self.log_file)
                                 self.blockchain.add_block(new_block)
                                 if self.broadcast_freq == None or self.curr_step % self.broadcast_freq == 0:
-                                    # print("LOG mine: broadcasting block to all peers", file=self.log_file)
+                                    print("LOG mine: broadcasting block to all peers", file=self.log_file)
+                                    tampered = False
                                     if self.tamper_freq != None and self.curr_step % self.tamper_freq == 0:
-                                        print("LOG mine: tampering with block hash (for testing)", file=self.log_file)
-                                        new_block.hash = 12345
+                                        tampered = True
+                                        print("LOG mine: tampering with block (for testing)", file=self.log_file)
+                                        print("LOG mine: tamper type:", self.tamper_type, file=self.log_file)
+                                        tmp = None
+                                        if self.tamper_type == None or self.tamper_type == "hash":
+                                            tmp = new_block.hash
+                                            new_block.hash = 12345
+                                        elif self.tamper_type == "prev_hash":
+                                            tmp = new_block.prev_hash
+                                            new_block.prev_hash = 23456
+                                        elif self.tamper_type == "txn_data":
+                                            tmp = new_block.txns[0].data["poll_id"]
+                                            new_block.txns[0].data["poll_id"] = "ID_THAT_YOU_WILL_REALLY_IMPROBABILISTICALLY_ENTER_ON_ACCIDENT"
+                                        elif self.tamper_type == "chain":
+                                            if len(self.blockchain.chain) < 2:
+                                                print("LOG mine: skipping tampering with chain due to chain being too small", file=self.log_file)
+                                            else:
+                                                self.blockchain.chain[1].hash = 38294329432
+                                        else:
+                                            tmp = new_block.hash
+                                            print("LOG mine: unsupported tamper type, defaulting to hash", file=self.log_file)
+                                            new_block.hash = 12345
+
                                     self.broadcast_block_to_all_peers(new_block)
+
+                                    # Restore data
+                                    if tampered:
+                                        if self.tamper_type == None or self.tamper_type == "hash":
+                                            new_block.hash = tmp
+                                        elif self.tamper_type == "prev_hash":
+                                            new_block.prev_hash = tmp
+                                        elif self.tamper_type == "txn_data":
+                                            new_block.txns[0].data["poll_id"] = tmp
+                                        elif self.tamper_type == "chain":
+                                            # Don't restore chain data because it's meant to be permanent
+                                            pass
+                                        else:
+                                            new_block.hash = tmp
+
                                 if self.broadcast_freq != None or self.tamper_freq != None:
                                     self.curr_step += 1
                                 chain = [f"id: {blk.id}" for blk in self.blockchain.chain]
