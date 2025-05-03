@@ -1,0 +1,11 @@
+LOG send_join_message: Connected to peer.
+LOG send_join_message: Requesting block ID 0
+LOG send_join_message: Added block
+LOG send_join_message: Connected to peer.
+LOG send_join_message: Requesting block ID 1
+LOG send_join_message: found bad chain
+LOG send_join_message: Connected to peer.
+LOG send_join_message: Requesting block ID 0
+LOG send_join_message: Found end of chain.
+LOG process_peer_connections: Error in process_peer_connections (may be expected if closing): [Errno 9] Bad file descriptor
+LOG process_peer_connections: Listening thread terminated

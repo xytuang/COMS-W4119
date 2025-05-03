@@ -1,4 +1,4 @@
-LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': '16da131c-1201-49ff-93fd-5961b9dda27f', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
+LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': '0a6d0012-8395-4316-9f69-6306cfd76446', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
 LOG mine: found a new block 0
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
@@ -7,19 +7,11 @@ LOG mine: tamper type: chain
 LOG mine: skipping tampering with chain due to chain being too small
 LOG broadcast_block_to_all_peers: broadcasting block 0
 LOG mine: current state of blockchain: ['id: 0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '16da131c-1201-49ff-93fd-5961b9dda27f', 'vote': 'a'}
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '16da131c-1201-49ff-93fd-5961b9dda27f', 'vote': 'b'}
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '16da131c-1201-49ff-93fd-5961b9dda27f', 'vote': 'c'}
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '16da131c-1201-49ff-93fd-5961b9dda27f', 'vote': 'c'}
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '16da131c-1201-49ff-93fd-5961b9dda27f', 'vote': 'c'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '0a6d0012-8395-4316-9f69-6306cfd76446', 'vote': 'a'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '0a6d0012-8395-4316-9f69-6306cfd76446', 'vote': 'b'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '0a6d0012-8395-4316-9f69-6306cfd76446', 'vote': 'c'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '0a6d0012-8395-4316-9f69-6306cfd76446', 'vote': 'c'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '0a6d0012-8395-4316-9f69-6306cfd76446', 'vote': 'c'}
 LOG mine: found a new block 1
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
@@ -47,5 +39,13 @@ LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 5
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3', 'id: 4', 'id: 5']
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['GET-BLOCK', '0']
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['GET-BLOCK', '1']
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['GET-BLOCK', '0']
+LOG process_peer_connections: Connected to new peer.
+LOG process_peer_connections: found header ['GET-BLOCK', '1']
 LOG process_peer_connections: Error in process_peer_connections (may be expected if closing): [Errno 9] Bad file descriptor
 LOG process_peer_connections: Listening thread terminated
