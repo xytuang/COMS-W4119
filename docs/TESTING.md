@@ -112,6 +112,35 @@ Observations: We see the expected behavior, and it shows that the network can ha
 
 Logs are in the peer_leave_test folder.
 
+=====Fork Test=====
+
+Start tracker: Start the tracker: python3 tracker.py 50000
+
+Start Peer 1: python3 app.py 50003 127.0.0.1 50000 2 demo_fork_test/config.json
+
+Peer 1 input: 1, create pollA, options a,b,c
+
+Start Peer 2: python3 app.py 50004 127.0.0.1 50000 2
+Start Peer 3: python3 app.py 50002 127.0.0.1 50000 2
+
+Peer 1 input: 3, vote for pollA, option a (block not broadcasted)
+Peer 1 input: 3, vote for pollA, option a (block not broadcasted)
+
+Since Peer 1 does not broadcast these blocks, Peers 2 and 3 will still have pollA with no votes.
+
+Peer 2 input: 3, vote for pollA, option a
+
+Peer 2 will only have one vote for option a in pollA.
+
+Peer 1 input: 3 vote for pollA, option b (block gets broadcasted)
+
+Wait a few seconds and check that Peers 1,2 and 3 all have the same chain (a has 2 votes, b has 1 vote, c has no votes).
+
+When Peer 1 broadcasts the option b vote, forking happens in Peers 2/3 since Peer 1's internal chain is longer (just not broadcasted yet), and that causes Peers 2/3 to request Peer 1's chain to replace their own shorter chain.
+
+Logs are in the demo_fork_test folder.
+
+
 =====Basic Simulation Test=====
 
 This is another basic functionality test, except this time the tests take in a simulation file that will allow the peers to automatically run commands rather than relying solely manual input.
