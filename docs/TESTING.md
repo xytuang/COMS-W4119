@@ -120,17 +120,17 @@ Start Peer 1: python3 app.py 50003 127.0.0.1 50000 2 demo_fork_test/config.json
 
 Peer 1 input: 1, create pollA, options a,b,c
 
-Start Peer 2: python3 app.py 50004 127.0.0.1 50000 2
-Start Peer 3: python3 app.py 50002 127.0.0.1 50000 2
+Start Peer 2: python3 app.py 50002 127.0.0.1 50000 2
+Start Peer 3: python3 app.py 50004 127.0.0.1 50000 2
 
 Peer 1 input: 3, vote for pollA, option a (block not broadcasted)
 Peer 1 input: 3, vote for pollA, option a (block not broadcasted)
 
 Since Peer 1 does not broadcast these blocks, Peers 2 and 3 will still have pollA with no votes.
 
-Peer 2 input: 3, vote for pollA, option a
+Peer 2 input: 3, vote for pollA, option a (this gets broadcasted, but gets discarded by Peer 1 since Peer 1 has a longer internal chain)
 
-Peer 2 will only have one vote for option a in pollA.
+Peer 2, Peer 3 will only have one vote for option a in pollA.
 
 Peer 1 input: 3 vote for pollA, option b (block gets broadcasted)
 
