@@ -51,10 +51,8 @@ class Peer:
         self.listening_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listening_sock.bind(('', listening_port))
         self.listening_thread = threading.Thread(target=self.process_peer_connections, args=(self.listening_sock,))
-        self.listening_thread.start()
 
         self.polling_thread = threading.Thread(target=self.poll_from_rcv_buffer)
-        self.polling_thread.start()
 
         self.tracker_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tracker_socket.connect((tracker_addr, tracker_port))
@@ -76,7 +74,6 @@ class Peer:
         self.difficulty = difficulty
 
         self.mining_thread = threading.Thread(target=self.mine)
-        self.mining_thread.start()
         
         self.tamper_freq = None
         self.tamper_type = None
@@ -422,6 +419,10 @@ class Peer:
 
         with self.blockchain_lock:
             self.blockchain = best_chain
+
+        self.polling_thread.start()
+        self.listening_thread.start()
+        self.mining_thread.start()
 
         with self.state_lock:
             self.state = State.MINING
