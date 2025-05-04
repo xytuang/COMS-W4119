@@ -419,8 +419,9 @@ class Peer:
 
             if not bad_chain and len(peer_chain.chain) > len(best_chain.chain):
                 best_chain = peer_chain
-        
-        self.blockchain = best_chain
+
+        with self.blockchain_lock:
+            self.blockchain = best_chain
 
         with self.state_lock:
             self.state = State.MINING
