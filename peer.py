@@ -145,18 +145,19 @@ class Peer:
                     self.rcv_buffer_lock.acquire()
                     self.rcv_buffer.append({"type":"BLOCK", "tag":header_arr[2], "payload":block, "peer_ip_addr": addr[0]})
                     self.rcv_buffer_lock.release()
-                elif header_arr[0] == "GET-BLOCK":
-                    _id = int(header_arr[1])
+                elif header_arr[0] == "GET-CHAIN":
                     with self.blockchain_lock:
-                        requested_block = self.blockchain.get_block_by_id(_id)
-                        
-                        # If our chain is empty, create a fake block that signals end of chain
-                        if not requested_block:
-                            fake_txn = Transaction(b"", time.time(), {})
-                            fake_txn.sign(self.private_key)
-                            requested_block = Block(-1, [fake_txn], 0, 0, 0, time.time())
+                        for _id in range(len(self.blockchain.chain)):
+                            exist_block = self.blockchain.get_block_by_id(_id)
+                            self.send_block_to_peer(exist_block, "EXIST", peer_socket)
 
-                    self.send_block_to_peer(requested_block, "EXIST", peer_socket)
+                        fake_txn = Transaction(b"", time.time(), {})
+                        fake_txn.sign(self.private_key)
+                        end_block = Block(-1, [fake_txn], 0, 0, 0, time.time())
+
+                        self.send_block_to_peer(end_block, "EXIST", peer_socket)
+
+                        print("LOG process_peer_connections: finished sending chain of length", len(self.blockchain.chain), file=self.log_file)
                 else:
                     print("LOG process_peer_connections: Unsupported header type", file=self.log_file)
 
@@ -289,20 +290,25 @@ class Peer:
 
         listening_port = self.get_port_from_peer_id(peer_pub_id)
 
+        dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        dest_socket.connect((peer_addr, listening_port))
+        print("LOG get_chain_from_peer: Connected to peer.", file=self.log_file)
+
+        msg = ["GET-CHAIN", "\n"]
+        msg_bytes = "".join(msg).encode()
+
+        print("LOG get_chain_from_peer: Requesting block ID", str(curr_id), file=self.log_file)
+
+        dest_socket.sendall(msg_bytes)
+
+        dest_socket_helper = SocketHelper(dest_socket)
+
         while True:
-            dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            dest_socket.connect((peer_addr, listening_port))
-            print("LOG get_chain_from_peer: Connected to peer.", file=self.log_file)
-
-            msg = ["GET-BLOCK", " ", str(curr_id), "\n"]
-            msg_bytes = "".join(msg).encode()
-
-            print("LOG get_chain_from_peer: Requesting block ID", str(curr_id), file=self.log_file)
-
-            dest_socket.sendall(msg_bytes)
-
-            dest_socket_helper = SocketHelper(dest_socket)
             header = dest_socket_helper.get_data_until_newline().decode()
+
+            if header == None:
+                bad_chain = True
+                break
 
             header_arr = header.split(' ')
             block_len = int(header_arr[1])
@@ -313,7 +319,6 @@ class Peer:
 
             if block.id == -1:
                 print("LOG get_chain_from_peer: Found end of chain.", file=self.log_file)
-                dest_socket.close()
                 break
             elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
                 print("LOG get_chain_from_peer: Added block", file=self.log_file)
@@ -321,12 +326,12 @@ class Peer:
             else:
                 print("LOG get_chain_from_peer: found bad chain", file=self.log_file)
                 bad_chain = True
-                dest_socket.close()
                 break
 
-            dest_socket.close()
+        if not bad_chain:
+            print("LOG get_chain_from_peer: got chain with length", len(self.blockchain.chain), file=self.log_file)
 
-            curr_id += 1
+        dest_socket.close()
 
         if bad_chain:
             return None
@@ -374,19 +379,19 @@ class Peer:
             bad_chain = False
 
             # Request chain from peer
+            dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            dest_socket.connect((node[0], node[1]))
+            print("LOG send_join_message: Connected to peer.", file=self.log_file)
+
+            msg = ["GET-CHAIN", "\n"]
+            msg_bytes = "".join(msg).encode()
+
+            print("LOG send_join_message: Requesting chain", file=self.log_file)
+
+            dest_socket.sendall(msg_bytes)
+
+            dest_socket_helper = SocketHelper(dest_socket)
             while True:
-                dest_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-                dest_socket.connect((node[0], node[1]))
-                print("LOG send_join_message: Connected to peer.", file=self.log_file)
-
-                msg = ["GET-BLOCK", " ", str(curr_id), "\n"]
-                msg_bytes = "".join(msg).encode()
-
-                print("LOG send_join_message: Requesting block ID", str(curr_id), file=self.log_file)
-
-                dest_socket.sendall(msg_bytes)
-
-                dest_socket_helper = SocketHelper(dest_socket)
                 header = dest_socket_helper.get_data_until_newline().decode()
 
                 header_arr = header.split(' ')
@@ -398,7 +403,6 @@ class Peer:
 
                 if block.id == -1:
                     print("LOG send_join_message: Found end of chain.", file=self.log_file)
-                    dest_socket.close()
                     break
 
                 elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
@@ -407,12 +411,9 @@ class Peer:
                 else:
                     print("LOG send_join_message: found bad chain", file=self.log_file)
                     bad_chain = True
-                    dest_socket.close()
                     break
 
-                dest_socket.close()
-
-                curr_id += 1
+            dest_socket.close()
 
             if not bad_chain and len(peer_chain.chain) > len(best_chain.chain):
                 best_chain = peer_chain
