@@ -22,6 +22,14 @@ class Block:
         self.timestamp = timestamp
     
     def to_json(self, with_hash=True):
+        """
+        Converts block to a dictionary format
+
+        Args:
+            with_hash (boolean): whether to include the block's hash
+        Returns:
+            dict: dict representation of the block
+        """
         block_dict = {
             "id": self.id,
             "txns": [txn.to_json() for txn in self.txns],
@@ -54,9 +62,6 @@ class Block:
         
         # check if the recomputed hash equals to the stoed hash inside the block
         if recomputed_hash != self.hash:
-            # print("LOG block.is_valid: recomputed hash:", recomputed_hash)
-            # print("LOG block.is_valid: own hash:", self.hash)
-            # print("LOG block.is_valid: recomputed hash not same as current hash")
             return False
         
         # then, check if that hash starts with enough zeros
@@ -150,7 +155,3 @@ class Block:
             
         except (json.JSONDecodeError, KeyError, UnicodeDecodeError) as e:
             raise ValueError(f"Error parsing block from message: {e}")
-            
-
-
-

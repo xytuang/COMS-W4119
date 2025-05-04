@@ -189,6 +189,13 @@ def shutdown(peer):
     
 
 def parse_sim_file(sim_file, peer):
+    """
+    Reads a file of application events (e.g. create, vote on a poll)
+    and executes them.
+
+    Args:
+        sim_file (str): name of the simulation file
+    """
     with open(sim_file, 'r') as f:
         for line in f:
             line_strp = line.strip()
@@ -208,7 +215,7 @@ def parse_sim_file(sim_file, peer):
                     continue
                 option = data_arr[2]
                 vote(peer, poll["poll_id"], option)
-                print(f"Submitted transation for voting {option} on {poll_name}")
+                print(f"Submitted transaction for voting {option} on {poll_name}")
             elif data_arr[0] == "SLEEP":
                 print(f"Sleeping for {str(data_arr[1])} s")
                 time.sleep(float(data_arr[1]))
@@ -348,30 +355,3 @@ if __name__ == '__main__':
         raise
 
     print("Closed successfully")
-    ################################################################ Get blockchain test
-    # print(peer.get_port_from_peer_id(peer.public_key_to_bytes()))
-    # dumb_chain = Blockchain()
-    
-    # transaction = Transaction(
-    #     sender = peer.public_key_to_bytes(),
-    #     timestamp= time.time(),
-    #     data = "dummy"
-    # )
-    # transaction.sign(peer.private_key)
-
-    # dummy_block = Block(_id=0, txns=[transaction], nonce=100, prev_hash=2, _hash=1)
-    # dumb_chain.add_block(dummy_block)
-    # peer.blockchain = dumb_chain 
-    # dumb_network_chain = peer.get_chain_from_peer('127.0.0.1', peer.public_key_to_bytes())
-    # print(dumb_network_chain.get_latest_block())
-    # print(dumb_network_chain.get_latest_block().id)
-
-    ############################################################################
-
-    # serialized_nodes = peer.request_nodes_from_tracker()
-    # nodes = peer.parse_serialized_nodes(serialized_nodes)
-    # print(nodes)
-
-    # dummy_block = Block(_id=1, data="dummy", nonce=100, prev_hash=2, _hash=1)
-    # peer.broadcast_block_to_all_peers(dummy_block)
-    # peer.request_block_from_all_peers(nodes, 100)

@@ -1,3 +1,5 @@
+For testing, we use difficulty 2 (e.g. nonce is valid when the first two digits of the hash are 0) for testing convenience.
+
 =====Basic Test=====
 
 This test is manual and is just a simple test to make sure basic functionality works. All data is untampered with for this test, and all blocks are broadcast immediately after they are mined.
@@ -57,6 +59,8 @@ We expect x to have one vote.
 
 Observations: We see the expected behavior in the console. Logs are also included, and they show new blocks created (for poll creation and votes) and broadcasted when the respective peer mines them, as well as the peer recieving them.
 
+Logs are in the basic_test folder.
+
 =====Peer Joining Test=====
 
 Start the tracker: python3 tracker.py 50000
@@ -79,6 +83,8 @@ For all peers: input 4, view pollA
 Should see a,b,c with one vote each.
 
 Observations: When peers 2 and 3 join, they recieve the longest chain in the network. In this case this is Peer 1. We see in the included logs that Peer 1 mines the two blocks, and then serves GET-BLOCK requests to Peers 2 and 3. For Peer 2 we see it requesting the chain from 1 but also sending its chain to Peer 3 when Peer 3 joins so that Peer 3 can choose the longest chain it receives. And in Peer 3 logs we see it requesting chains from 1 and 2.
+
+Logs are in the peer_join_test folder.
 
 =====Peer Leaving Test=====
 
@@ -104,6 +110,8 @@ We expect pollA to have one vote for a.
 
 Observations: We see the expected behavior, and it shows that the network can handle the leaving of the peer. In our case, the peer that created the poll left, but since the other peers had a copy of the blockchain in their own nodes, they were still able to vote on the poll and have it be consistent across the remaining two peers without issue.
 
+Logs are in the peer_leave_test folder.
+
 =====Basic Simulation Test=====
 
 This is another basic functionality test, except this time the tests take in a simulation file that will allow the peers to automatically run commands rather than relying solely manual input.
@@ -117,6 +125,8 @@ Peer 3: python3 app.py 50004 127.0.0.1 50000 2 config_empty.json basic_sim_test/
 
 Main thing to check here is that the nodes end up with the same result. Inputting 4 and checking pollA for each of the nodes reveal that this is indeed the case case (detailed logs also included).
 
+Logs are in the basic_sim_test.
+
 =====Outgoing Data Tamper Tests=====
 
 Available tests: "hash", "prev_hash", "txn_data"
@@ -125,10 +135,9 @@ General test outline:
 
 Start the tracker: python3 tracker.py 50000
 
-Start the first peer: python3 app.py 50004 127.0.0.1 50000 2 config_empty.json tamper_TESTNAME_test/primary.txt
+Start the first peer: python3 app.py 50004 127.0.0.1 50000 2 config_empty.json tamper_TESTNAME_test/primary.txt where TESTNAME is one of "hash", "prev_hash", "txn_data".
 
 This creates a poll called pollA. Make sure to wait for the "pollA" creation transaction to be mined by checking list of available polls in input.
-TESTNAME is one of "hash", "prev_hash", "txn_data"
 
 Start the second peer: python3 app.py 50003 127.0.0.1 50000 2 tamper_hash_test/config.json tamper_TESTNAME_test/secondary.txt
 
@@ -137,6 +146,7 @@ reject the block.
 
 However, the internal chain is consistent, just the outgoing data was tampered with. So we expect to see blocks being rejected in the first peer, but when the second peer mines a valid block and sends it to the first peer, the first peer is going to see that its chain is shorter (since the first peer doesn't actively mine anything beyond poll creation), and thus it'll request the chain from the second peer to adopt as its own chain. So in the end we'll see consistent vote results across both peers.
 
+Logs are in the tamper_TESTNAME_test folder.
 
 ===Tamper Hash Test===
 
@@ -396,6 +406,8 @@ python3 app.py 50003 127.0.0.1 50000 2
 
 We see that in 50003_log.txt it detects the bad chain and does not adopt it.
 
+Logs are in the tamper_chain_test folder.
+
 =====Stress Test=====
 
 Run in order:
@@ -419,3 +431,5 @@ Which poll do you want to see? pollA
 {'a': 34, 'b': 54, 'c': 53}
 
 We see that at the end all peers have the same chain, which is what we want.
+
+Logs are in the stress_test folder.

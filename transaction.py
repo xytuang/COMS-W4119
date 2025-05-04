@@ -6,6 +6,7 @@ import json
 class Transaction:
     def __init__(self, sender, timestamp, data, signature=None):
         """
+        This is a helper class to manage the details of an individual transaction.
 
         Args:
             sender (bytes): The byte representation of the public_key of the peer that created this transaction. We need this for verification
@@ -19,6 +20,14 @@ class Transaction:
         self.signature  = signature
 
     def to_json(self, with_signature=True):
+        """
+        Converts the transaction to a dictionary format
+
+        Args:
+            with_signature (boolean): whether to include the transaction signature
+        Returns:
+            dict: dictionary representing transaction data
+        """
         txn_dict = {
             "sender": self.sender.decode(),
             "timestamp": self.timestamp,
@@ -31,6 +40,15 @@ class Transaction:
     
     @staticmethod
     def from_json(obj):
+        """
+        Takes in a dictionary representing a transaction and converts
+        it to a Transaction object
+
+        Args:
+            obj (dict): Dictionary representation of the transaction
+        Returns:
+            Transaction: a transaction object
+        """
         return Transaction(
             sender=obj["sender"].encode(),
             timestamp=obj["timestamp"],
@@ -56,6 +74,15 @@ class Transaction:
 
     @staticmethod
     def from_bytes(txn_bytes):
+        """
+        Takes in bytes representing a transaction and converts
+        it into a transaction object
+
+        Args:
+            txn_bytes (byte): bytes representing a transaction
+        Returns:
+            Transaction: the corresponding Transaction object
+        """
         txn_json_str = txn_bytes.decode()
         txn_dict = json.loads(txn_json_str)
 
@@ -65,8 +92,6 @@ class Transaction:
             data=txn_dict["data"],
             signature=bytes.fromhex(txn_dict["signature"]) if txn_dict["signature"] else None
         )
-
-
 
     def sign(self, private_key):
         """

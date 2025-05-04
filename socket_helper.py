@@ -1,6 +1,8 @@
 
 class SocketHelper():
     """
+    Note: derived from SocketHelper() in bwz2104's hw1
+
     The core socket logic for recieving messages with our self-made protocol.
     Makes the overall project logic a lot simpler as long as get_header and get_data
     are implemented correctly since it'll handle cases such as two messages being
@@ -59,6 +61,7 @@ class SocketHelper():
         curr_buf = b''
         msg_len = 0
         while True:
+            tried_to_recv = False
             rec_buf = None
 
             # Read the unparsed buf from previous receives
@@ -66,7 +69,12 @@ class SocketHelper():
                 rec_buf = self.rem_buf
                 self.rem_buf = None
             else:
+                tried_to_recv = True
                 rec_buf = self.socket.recv(4096)
+
+            # Means the socket disconnected
+            if tried_to_recv and not rec_buf:
+                return None
 
             msg_len += len(rec_buf)
             curr_buf += rec_buf

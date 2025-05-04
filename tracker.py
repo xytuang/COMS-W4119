@@ -1,4 +1,3 @@
-
 import socket
 import threading
 import sys
@@ -9,14 +8,33 @@ MAX_QUEUED_CONNECTIONS = 5
 active_peers = {}
 active_peers_lock = threading.Lock()
 
-# Usage: python3 tracker.py <tracker_port>
+"""
+This is the implementation for the tracker,
+which is responsible for handling peer registration
+and keeping track of all the peers in the network
+"""
 
 def delete_peer(peer_id):
+    """
+    Deletes a peer from the list of trackd peers
+
+    Args:
+        peer_id (bytes): public ID of the peer
+    """
     active_peers_lock.acquire()
     del active_peers[peer_id]
     active_peers_lock.release()
 
 def serialize_active_peers(peer_pub_id):
+    """
+    Serializes all the active peers in the network except
+    for the requesting peer.
+
+    Args:
+        peer_pub_id (bytes): public ID of the peer to be excluded
+    Returns:
+        str: serialized string of active peers
+    """
     active_peers_lock.acquire()
 
     res = ['PEERS', '\n']
@@ -44,6 +62,14 @@ def serialize_active_peers(peer_pub_id):
     return "".join(res)
 
 def process_peer_requests(peer):
+    """
+    Handles a peer's registration logic and requests for other peers
+    in the network.
+
+    Args:
+        peer (PeerConn): peer connection information
+    """
+
     print("Connected to peer at:", peer.addr[0])
     peer_socket_helper = SocketHelper(peer.socket)
     # Listen for the join message
@@ -53,7 +79,7 @@ def process_peer_requests(peer):
     if join_header_bytes == None:
         return
 
-    # handle LEAVE message at connection
+    # handle LEAVE message at connection, for shutdown logic
     join_header = join_header_bytes.decode()
     if join_header == "LEAVE":
         print(f"Peer at {peer.addr[0]} is leaving the network")
@@ -91,8 +117,6 @@ def process_peer_requests(peer):
     
     print("Peer ID (bytes):",peer.pub_id)
 
-    #TODO: Might want to send ACK that the peer has been registered
-    # The ACK is really a list of all active peers
     active_peers_str = serialize_active_peers(peer.pub_id)
     active_peers_bytes = active_peers_str.encode()
     peer.socket.sendall(active_peers_bytes)
@@ -106,7 +130,7 @@ def process_peer_requests(peer):
         header = header_bytes.decode()
         header_arr = header.split(' ')
         if header_arr[0] == "LEAVE":
-            print("Peer at {peer.addr[0]} is leaving the network")
+            print(f"Peer at {peer.addr[0]} is leaving the network")
             break
         elif header_arr[0] == "LIST":
             print("Serving LIST request")
@@ -114,6 +138,8 @@ def process_peer_requests(peer):
             pub_id_len = int(header_arr[1])
 
             peer_pub_id = peer_socket_helper.get_n_bytes_of_data(pub_id_len)
+            if peer_pub_id == None:
+                break
 
             active_peers_str = serialize_active_peers(peer_pub_id)
 
@@ -129,6 +155,9 @@ def process_peer_requests(peer):
             pub_id_len = int(header_arr[1])
 
             peer_pub_id = peer_socket_helper.get_n_bytes_of_data(pub_id_len)
+            if peer_pub_id == None:
+                break
+
             msg = ["PEER-PORT", "\n"]
             active_peers_lock.acquire()
             if peer_pub_id in active_peers:
@@ -151,6 +180,9 @@ def process_peer_requests(peer):
     print("Disconnected peer at " + str(peer.addr))
     
 class PeerConn:
+    """
+    Helper class to keep track of peer connection information
+    """
     def __init__(self):
         self.socket = None
         self.addr = None
@@ -158,6 +190,9 @@ class PeerConn:
         self.pub_id = None
 
 class Tracker:
+    """
+    Main tracker class to handle tracker logic
+    """
     def __init__(self, tracker_port):
         self.threads = []
         self.threads_list_lock = threading.Lock()
@@ -165,6 +200,10 @@ class Tracker:
         self.tracker_sock.bind(('', tracker_port))
 
     def listen_for_connections(self):
+        """
+        Listens for new peers and spins up a thread to process peer requests
+        once it finds a new one
+        """
         print("Started main listening thread.")
         self.tracker_sock.listen(MAX_QUEUED_CONNECTIONS)
         while True:

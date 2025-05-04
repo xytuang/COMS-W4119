@@ -23,6 +23,7 @@ Transaction format for the polling application
 class Blockchain:
     def __init__(self, chain=None, difficulty=4):
         """
+        This is a helper class for managing the logic specific to the blockchain itself.
 
         Args:
             chain (list | None): A list of Blocks. Used to initialize the blockchain of a peer that has just joined a network that has been mining.
@@ -73,8 +74,17 @@ class Blockchain:
 
 
     def can_add_block_to_chain(self, new_block):
+        """
+        Checks whether a block can be added to the chain. Function
+        assumes that the block in a vacuum is already valid, this is
+        more about how the new block relates to the chain.
+
+        Args:
+            new_block (Block): the block to be added
+        Returns:
+            boolean: whether the block can be added
+        """
         if new_block.id != len(self.chain):
-            #print(f"LOG can_add_block_to_chain: can't add block due to invalid block id (new id: {str(new_block.id)}, chain length: {str(len(self.chain))})")
             return False
 
         if len(self.chain) == 0:
@@ -82,7 +92,6 @@ class Blockchain:
 
         latest_block_hash = self.get_latest_block().hash
         if latest_block_hash != new_block.prev_hash:
-            #print("LOG can_add_block_to_chain: rejected block due to invalid hash")
             return False
 
         if self.is_new_block_repeat_poll(new_block) or self.is_new_block_vote_for_nonexistent_poll(new_block):
@@ -91,18 +100,31 @@ class Blockchain:
         return True
 
     def is_new_block_repeat_poll(self, new_block):
-        # print("new_block.txns[0].data:", new_block.txns[0].data)
+        """
+        Checks whether the new block tries to create a poll
+        that already exists
+
+        Args:
+            new_block (Block): the block to check
+        Returns:
+            boolean: whether the block is valid or not
+        """
         if new_block.txns[0].data["transaction_type"] == "create_poll":
-            # print("new_block.txns[0].data:", new_block.txns[0].data)
             for block in self.chain:
-                # print("\tblock.txns[0].data:", block.txns[0].data)
                 if block.txns[0].data["transaction_type"] == "create_poll":
                     if block.txns[0].data["poll_name"] == new_block.txns[0].data["poll_name"]:
-                        # print("LOG can_add_block_to_chain: rejected block due to existing poll")
                         return True
         return False
 
     def is_new_block_vote_for_nonexistent_poll(self, new_block):
+        """
+        Checks whether a block is for a non-existent poll
+
+        Args:
+            new_block (Block): the block to check
+        Returns:
+            boolean: whether the block is valid
+        """
         if new_block.txns[0].data["transaction_type"] == "vote":
             for block in self.chain:
                 if block.txns[0].data["transaction_type"] == "create_poll":
@@ -166,9 +188,7 @@ class Blockchain:
         self.add_block(new_block)
         
         return new_block
-        
-    # I am not 100% sure if this is needed but from some videos I watched this is
-    # considered a special block and it's easy to implement so i did it anyway
+
     def create_genesis_block(self):
         """
         Create the first block in the chain
