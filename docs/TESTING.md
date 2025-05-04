@@ -6,11 +6,11 @@ This test is manual and is just a simple test to make sure basic functionality w
 
 Start the tracker: python3 tracker.py 50000
 
-Start the first peer: python3 app.py 50004 127.0.0.1 50000 2
-Start the second peer: python3 app.py 50003 127.0.0.1 50000 2
-Start the third peer: python3 app.py 50002 127.0.0.1 50000 2
+Start the first peer: python3 app.py 50004 127.0.0.1 50000 2 <br>
+Start the second peer: python3 app.py 50003 127.0.0.1 50000 2 <br>
+Start the third peer: python3 app.py 50002 127.0.0.1 50000 2 <br>
 
-Peer 1 input: 1, create pollA with options a,b,c
+Peer 1 input: 1, create pollA with options a,b,c <br>
 Peer 1 input: 3, vote for pollA, option a
 
 Wait a few seconds for the blocks to be mined.
@@ -67,10 +67,10 @@ Start the tracker: python3 tracker.py 50000
 
 Start the first peer: python3 app.py 50002 127.0.0.1 50000 2
 
-Peer 1 input: 1, create pollA with options a,b,c
-Peer 1 input: 3, vote for pollA, option a
-Peer 1 input: 3, vote for pollA, option b
-Peer 1 input: 3, vote for pollA, option c
+Peer 1 input: 1, create pollA with options a,b,c <br>
+Peer 1 input: 3, vote for pollA, option a <br>
+Peer 1 input: 3, vote for pollA, option b <br>
+Peer 1 input: 3, vote for pollA, option c <br>
 
 Wait a few seconds for the blocks to be mined
 
@@ -90,9 +90,9 @@ Logs are in the peer_join_test folder.
 
 Start the tracker: python3 tracker.py 50000
 
-Start the first peer: python3 app.py 50002 127.0.0.1 50000 2
-Start the second peer: python3 app.py 50003 127.0.0.1 50000 2
-Start the third peer: python3 app.py 50004 127.0.0.1 50000 2
+Start the first peer: python3 app.py 50002 127.0.0.1 50000 2 <br>
+Start the second peer: python3 app.py 50003 127.0.0.1 50000 2 <br>
+Start the third peer: python3 app.py 50004 127.0.0.1 50000 2 <br>
 
 Peer 1 input: 1, create pollA with options a,b,c
 
@@ -120,11 +120,11 @@ Start Peer 1: python3 app.py 50003 127.0.0.1 50000 2 demo_fork_test/config.json
 
 Peer 1 input: 1, create pollA, options a,b,c
 
-Start Peer 2: python3 app.py 50002 127.0.0.1 50000 2
-Start Peer 3: python3 app.py 50004 127.0.0.1 50000 2
+Start Peer 2: python3 app.py 50002 127.0.0.1 50000 2 <br>
+Start Peer 3: python3 app.py 50004 127.0.0.1 50000 2 <br>
 
-Peer 1 input: 3, vote for pollA, option a (block not broadcasted)
-Peer 1 input: 3, vote for pollA, option a (block not broadcasted)
+Peer 1 input: 3, vote for pollA, option a (block not broadcasted) <br>
+Peer 1 input: 3, vote for pollA, option a (block not broadcasted) <br>
 
 Since Peer 1 does not broadcast these blocks, Peers 2 and 3 will still have pollA with no votes.
 
@@ -147,10 +147,10 @@ This is another basic functionality test, except this time the tests take in a s
 
 Start the tracker: python3 tracker.py 50000
 
-Peer 1: python3 app.py 50003 127.0.0.1 50000 2 config_empty.json basic_sim_test/primary.txt
-Wait for a few seconds
-Peer 2: python3 app.py 50002 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt
-Peer 3: python3 app.py 50004 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt 
+Peer 1: python3 app.py 50003 127.0.0.1 50000 2 config_empty.json basic_sim_test/primary.txt <br>
+Wait for a few seconds <br>
+Peer 2: python3 app.py 50002 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt <br>
+Peer 3: python3 app.py 50004 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt <br>
 
 Main thing to check here is that the nodes end up with the same result. Inputting 4 and checking pollA for each of the nodes reveal that this is indeed the case case (detailed logs also included).
 
@@ -209,52 +209,52 @@ Which poll do you want to see? pollA
 
 Highlighted logs from the first peer:
 
-LOG poll_from_rcv_buffer: received invalid block, discarding <----(Rejecting the invalid hash)
-... <----in between second peer mined a new block and broadcasted it
-LOG get_chain_from_peer: Connected to peer. <----(Requesting the chain of the second peer)
-LOG get_chain_from_peer: Requesting block ID 0
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 1
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 2
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 3
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 4
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 5
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 6
-LOG get_chain_from_peer: Found end of chain.
+LOG poll_from_rcv_buffer: received invalid block, discarding <----(Rejecting the invalid hash) <br>
+... <----in between second peer mined a new block and broadcasted it <br>
+LOG get_chain_from_peer: Connected to peer. <----(Requesting the chain of the second peer) <br>
+LOG get_chain_from_peer: Requesting block ID 0 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 1 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 2 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 3 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 4 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 5 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 6 <br>
+LOG get_chain_from_peer: Found end of chain. <br>
 
 Highlight logs from the second peer:
 
-LOG mine: found a new block 4 <------ Mined a new block and tampered with the hash
-LOG mine: found valid block, adding to chain
-LOG mine: tampering with block (for testing)
-LOG mine: tamper type: hash
-... <-----in between a new block was mined
-LOG process_peer_connections: Connected to new peer. <----(Sending the chain of the second peer)
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '2']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '3']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '4']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '5']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '6']
-LOG process_peer_connections: Listening thread terminated
+LOG mine: found a new block 4 <------ Mined a new block and tampered with the hash <br>
+LOG mine: found valid block, adding to chain <br>
+LOG mine: tampering with block (for testing) <br>
+LOG mine: tamper type: hash <br>
+... <-----in between a new block was mined <br>
+LOG process_peer_connections: Connected to new peer. <----(Sending the chain of the second peer) <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '0'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '1'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '2'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '3'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '4'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '5'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '6'] <br>
+LOG process_peer_connections: Listening thread terminated <br>
 
 
 ===Tamper Prev Test===
@@ -291,52 +291,52 @@ Which poll do you want to see? pollA
 
 Highlighted logs from the first peer:
 
-LOG poll_from_rcv_buffer: received invalid block, discarding <----(Rejecting the invalid hash)
-... <----in between second peer mined a new block and broadcasted it
-LOG get_chain_from_peer: Connected to peer. <----(Requesting the chain of the second peer)
-LOG get_chain_from_peer: Requesting block ID 0
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 1
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 2
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 3
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 4
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 5
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 6
-LOG get_chain_from_peer: Found end of chain.
+LOG poll_from_rcv_buffer: received invalid block, discarding <----(Rejecting the invalid hash) <br>
+... <----in between second peer mined a new block and broadcasted it <br>
+LOG get_chain_from_peer: Connected to peer. <----(Requesting the chain of the second peer) <br>
+LOG get_chain_from_peer: Requesting block ID 0 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 1 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 2 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 3 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 4 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 5 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 6 <br>
+LOG get_chain_from_peer: Found end of chain. <br>
 
 Highlight logs from the second peer:
 
-LOG mine: found a new block 4 <------ Mined a new block and tampered with the hash
-LOG mine: found valid block, adding to chain
-LOG mine: tampering with block (for testing)
-LOG mine: tamper type: prev_hash
-... <-----in between a new block was mined
-LOG process_peer_connections: Connected to new peer. <----(Sending the chain of the second peer)
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '2']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '3']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '4']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '5']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '6']
-LOG process_peer_connections: Listening thread terminated
+LOG mine: found a new block 4 <------ Mined a new block and tampered with the hash <br>
+LOG mine: found valid block, adding to chain <br>
+LOG mine: tampering with block (for testing) <br>
+LOG mine: tamper type: prev_hash <br>
+... <-----in between a new block was mined <br>
+LOG process_peer_connections: Connected to new peer. <----(Sending the chain of the second peer) <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '0'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '1'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '2'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '3'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '4'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '5'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '6'] <br>
+LOG process_peer_connections: Listening thread terminated <br>
 
 ===Tamper Transaction Data Test===
 
@@ -372,52 +372,52 @@ Which poll do you want to see? pollA
 
 Highlighted logs from the first peer:
 
-LOG poll_from_rcv_buffer: received invalid block, discarding <----(Rejecting the invalid hash)
-... <----in between second peer mined a new block and broadcasted it
-LOG get_chain_from_peer: Connected to peer. <----(Requesting the chain of the second peer)
-LOG get_chain_from_peer: Requesting block ID 0
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 1
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 2
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 3
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 4
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 5
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 6
-LOG get_chain_from_peer: Found end of chain.
+LOG poll_from_rcv_buffer: received invalid block, discarding <----(Rejecting the invalid hash) <br>
+... <----in between second peer mined a new block and broadcasted it <br>
+LOG get_chain_from_peer: Connected to peer. <----(Requesting the chain of the second peer) <br>
+LOG get_chain_from_peer: Requesting block ID 0 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 1 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 2 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 3 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 4 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 5 <br>
+LOG get_chain_from_peer: Added block <br>
+LOG get_chain_from_peer: Connected to peer. <br>
+LOG get_chain_from_peer: Requesting block ID 6 <br>
+LOG get_chain_from_peer: Found end of chain. <br>
 
 Highlight logs from the second peer:
 
-LOG mine: found a new block 4 <------ Mined a new block and tampered with the hash
-LOG mine: found valid block, adding to chain
-LOG mine: tampering with block (for testing)
-LOG mine: tamper type: txn_data
-... <-----in between a new block was mined
-LOG process_peer_connections: Connected to new peer. <----(Sending the chain of the second peer)
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '2']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '3']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '4']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '5']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '6']
-LOG process_peer_connections: Listening thread terminated
+LOG mine: found a new block 4 <------ Mined a new block and tampered with the hash <br>
+LOG mine: found valid block, adding to chain <br>
+LOG mine: tampering with block (for testing) <br>
+LOG mine: tamper type: txn_data <br>
+... <-----in between a new block was mined <br>
+LOG process_peer_connections: Connected to new peer. <----(Sending the chain of the second peer) <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '0'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '1'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '2'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '3'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '4'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '5'] <br>
+LOG process_peer_connections: Connected to new peer. <br>
+LOG process_peer_connections: found header ['GET-BLOCK', '6'] <br>
+LOG process_peer_connections: Listening thread terminated <br>
 
 =====Blockchain Tamper Test=====
 
@@ -440,10 +440,10 @@ Logs are in the tamper_chain_test folder.
 =====Stress Test=====
 
 Run in order:
-python3 tracker.py 50000
-python3 app.py 50004 127.0.0.1 50000 2 stress_test/config.json stress_test/primary.txt
-python3 app.py 50003 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt
-python3 app.py 50002 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt
+python3 tracker.py 50000 <br>
+python3 app.py 50004 127.0.0.1 50000 2 stress_test/config.json stress_test/primary.txt <br>
+python3 app.py 50003 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt <br>
+python3 app.py 50002 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt <br>
 
 This tests a bunch of transactions at the same time to make sure that we can handle concurrent execution fine. The peers don't always broadcast their blocks and periodically tamper with the hashes to really stress the system.
 
