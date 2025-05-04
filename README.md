@@ -33,22 +33,22 @@ pip install cryptography==35.0.0
 
 **Files**
 
-`app.py`: application code for the voting app and is the driver code for peer functionality
-`peer.py`: code for the peer class and implements all the peer functionality (e.g. mining, forking, etc.)
-`blockchain.py`: helper class for representing a blockchain
-`block.py`: helper class for an individual block in the blockchain (encapsulates a transaction and adds additional data like hash, nonce, etc.)
-`transaction.py`: helper class for a transaction (the core data of the block)
-`tracker.py`: implementation of the tracker that helps peers find each other
-`enums.py`: some helpful enums we use in our code for tracking state
-`socket_helper.py`: wrapper class for a socket that helps abstract parts of reading TCP stream data
+* `app.py`: application code for the voting app and is the driver code for peer functionality
+* `peer.py`: code for the peer class and implements all the peer functionality (e.g. mining, forking, etc.)
+* `blockchain.py`: helper class for representing a blockchain
+* `block.py`: helper class for an individual block in the blockchain (encapsulates a transaction and adds additional data like hash, nonce, etc.)
+* `transaction.py`: helper class for a transaction (the core data of the block)
+* `tracker.py`: implementation of the tracker that helps peers find each other
+* `enums.py`: some helpful enums we use in our code for tracking state
+* `socket_helper.py`: wrapper class for a socket that helps abstract parts of reading TCP stream data
 
-`config_empty.json`: empty config file, used when you need to pass in a config file but don't want to inject any testing code (e.g. tampering with blocks). For testing purposes and used in the tests in TESTING.md.
+* `config_empty.json`: empty config file, used when you need to pass in a config file but don't want to inject any testing code (e.g. tampering with blocks). For testing purposes and used in the tests in TESTING.md.
 
-`*_test/`: Each folder corresponds to a different test. They contain any configuration/simulation files needed and also logs for each test. Please see TESTING.md for these tests, which includes details about usage and the test themselves.
+* `*_test/`: Each folder corresponds to a different test. They contain any configuration/simulation files needed and also logs for each test. Please see TESTING.md for these tests, which includes details about usage and the test themselves.
 
-`archive/`: unused or old code/notes
-`docs/DESIGN.md`: description of our high level design
-`docs/TESTING.md`: description of the tests we ran
+* `archive/`: unused or old code/notes
+* `docs/DESIGN.md`: description of our high level design
+* `docs/TESTING.md`: description of the tests we ran
 
 **How to run the code**
 
