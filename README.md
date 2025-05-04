@@ -56,9 +56,9 @@ pip install cryptography==35.0.0
 
 2. Run app.py for each peer you want to create: python3 app.py {listening port} {tracker addr} {tracker port} {difficulty} {config file name} {sim file name}
 
-{difficulty} is optional, default is 4.
-{config file name} is optional and for testing (but requires {difficulty} to be set).
-{sim file name} is optional and for testing (but requires {difficulty}, {config file name} to be set)
+* {difficulty} is optional, default is 4.
+* {config file name} is optional and for testing (but requires {difficulty} to be set).
+* {sim file name} is optional and for testing (but requires {difficulty}, {config file name} to be set)
 
 3. In app.py, there will be a console GUI presenting a list of options, and the user enters the number corresponding to the option to initiate the action.
 
@@ -80,9 +80,9 @@ the block's previous hash, and txn_data the block's transaction data. Note that 
 
 The sim file is a .txt file that allows the user to automate application commands, mainly used for testing. This is a newline separated file, where each line is one of three commands:
 
-`CREATE {poll name} {option1} {option2} {option3}...` (submits a transaction that creates a poll with the name and options)
-`VOTE {poll name} {option}` (submits a transaction that votes for the specified option on the specified poll)
-`SLEEP {sleep seconds}` 
+* `CREATE {poll name} {option1} {option2} {option3}...` (submits a transaction that creates a poll with the name and options)
+* `VOTE {poll name} {option}` (submits a transaction that votes for the specified option on the specified poll)
+* `SLEEP {sleep seconds}` 
 
 **Assumptions Made**
 
