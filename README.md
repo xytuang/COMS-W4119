@@ -71,7 +71,7 @@ The config file is a .json that tells the code to periodically tamper with the b
 	"broadcast_freq":2
 }`
 
-`tamper_freq` says how often an outgoing block should be tampered with, and `tamper_type` says what data should be tampered. `broadcast_freq` says how often a block should be broadcasted. For instance, here every other block is broadcast starting with the first block.
+`tamper_freq` says how often a block should be tampered with, and `tamper_type` says what data should be tampered. `broadcast_freq` says how often a block should be broadcasted. If a block is not being broadcast, then tampering is skipped for that block.
 
 The available types of tampering are "hash", "prev_hash", "txn_data" (transaction data), and "chain". "hash" modifies a broadcasted block's hash, "prev_hash"
 the block's previous hash, and txn_data the block's transaction data. Note that these only modify an outgoing broadcasted block and not the underlying chain.

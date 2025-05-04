@@ -443,9 +443,9 @@ Run in order:
 python3 tracker.py 50000 <br>
 python3 app.py 50004 127.0.0.1 50000 2 stress_test/config.json stress_test/primary.txt <br>
 python3 app.py 50003 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt <br>
-python3 app.py 50002 127.0.0.1 50000 2 stress_test/config.json stress_test/secondary.txt <br>
+python3 app.py 50002 127.0.0.1 50000 2 stress_test/config.json stress_test/tertiary.txt <br>
 
-This tests a bunch of transactions at the same time to make sure that we can handle concurrent execution fine. The peers don't always broadcast their blocks and periodically tamper with the hashes to really stress the system.
+This tests a bunch of transactions at the same time to make sure that we can handle concurrent execution fine. The peers don't always broadcast their blocks and periodically tamper with the hashes to really stress the system. The third peer (running the tertiary.txt sim file) sleeps at the end for 10 seconds and then submits a few more votes.
 
 Peers will race against each other by nature of this test, so this is a good way to stress our forking logic to the max. We expect to see all the peers converge on the same chain in the end, and we observe the same console output for each of the peers once all the transactions have been processed:
 
@@ -457,7 +457,7 @@ Pick an option:
  5. Quit
 4
 Which poll do you want to see? pollA
-{'a': 34, 'b': 54, 'c': 53}
+{'a': 36, 'b': 58, 'c': 59} <--- results may slightly vary based off how the peers race on a particular run, the main thing to check is whether the chains can converge to the same one.
 
 We see that at the end all peers have the same chain, which is what we want.
 
