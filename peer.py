@@ -192,7 +192,7 @@ class Peer:
                 continue
 
             if data["type"] == "BLOCK":
-                print(f"LOG poll_from_rcv_buffer: received block (id={data["payload"].id}) data: ", data, file=self.log_file)
+                print(f"LOG poll_from_rcv_buffer: received block (id={data['payload'].id}) data: ", data, file=self.log_file)
 
                 block = data["payload"]
                 _id = block.id
