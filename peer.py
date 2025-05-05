@@ -210,7 +210,7 @@ class Peer:
                         print(f"LOG poll_from_rcv_buffer: added block, current state of blockchain: {chain}", file=self.log_file)
                     
                     # If the incoming block is valid and has more work done, potential fork
-                    elif _id > len(self.blockchain.chain):
+                    elif _id >= len(self.blockchain.chain):
                         print(f"LOG poll_from_rcv_buffer: Detected fork (new id: {str(_id)}, chain len: {len(self.blockchain.chain)}), resolving", file=self.log_file)
                         # Forking logic :)
                         # Set state to wait-mode where all we are looking for are
