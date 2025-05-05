@@ -112,6 +112,8 @@ We expect pollA to have one vote for a.
 
 Observations: We see the expected behavior, and it shows that the network can handle the leaving of the peer. In our case, the peer that created the poll left, but since the other peers had a copy of the blockchain in their own nodes, they were still able to vote on the poll and have it be consistent across the remaining two peers without issue.
 
+The tracker also emits on the console when a peer disconnects, helping add confidence that it is processing peers leaving correctly.
+
 Logs are in the peer_leave_test folder.
 
 =====Fork Test=====
@@ -139,6 +141,8 @@ Peer 1 input: 3 vote for pollA, option b (block gets broadcasted)
 Wait a few seconds and check that Peers 1,2 and 3 all have the same chain (a has 2 votes, b has 1 vote, c has no votes).
 
 When Peer 1 broadcasts the option b vote, forking happens in Peers 2/3 since Peer 1's internal chain is longer (just not broadcasted yet), and that causes Peers 2/3 to request Peer 1's chain to replace their own shorter chain.
+
+In the end of the logs, we explicitly see Peer 1 processing GET-CHAIN requests in response to Peer 2 and Peer 3 requesting the chain for fork resolution. And in Peers 2 and 3, we see in the end of logs them detecting a fork and requesting the chain from Peer 1.
 
 Logs are in the demo_fork_test folder.
 
