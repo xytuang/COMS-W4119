@@ -52,9 +52,9 @@ pip install cryptography==35.0.0
 
 **How to run the code**
 
-1. Run tracker.py: `python3 tracker.py {tracker port}`
+1. cd into the directory where tracker.py is and run tracker.py: `python3 tracker.py {tracker port}`
 
-2. Run app.py for each peer you want to create: `python3 app.py {listening port} {tracker addr} {tracker port} {difficulty} {config file name} {sim file name}`
+2. cd into the directory where app.py is and run app.py for each peer you want to create (one terminal per app.py): `python3 app.py {listening port} {tracker addr} {tracker port} {difficulty} {config file name} {sim file name}`
 
 * {difficulty} is optional, default is 4.
 * {config file name} is optional and for testing (but requires {difficulty} to be set).
