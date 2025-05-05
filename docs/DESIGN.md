@@ -46,7 +46,7 @@ Peer Initiation:
 
 * The peer also generates an RSA public-private key pair, used for signing and allowing others to verify the signature. The public ID will also serve as the node's ID. The peer sends an ID message of format "ID {pub key no of bytes}\n{pub key bytes}\n" so the tracker can register the peer.
 
-* The peer then requests a list of active peers from the tracker, and uses this list to request the longest chain in the network from all the peers.
+* The peer then requests a list of active peers from the tracker, and uses this list to request the longest chain in the network from all the peers using the GET-CHAIN request that the listening threads of the respective peers will handle (more on that later).
 
 The peer will maintain a few different threads:
 
@@ -55,7 +55,7 @@ The peer will maintain a few different threads:
 
     * When a peer connects, then there are two possible requests:
         * One is to add a block to the chain (request format of "BLOCK {no of block bytes}\n{block bytes}\n"). It adds this to a rcv buffer for another thread to consume.
-        * Another is to retrieve a block from the chain with a particular ID (request format of "GET-BLOCK {id}\n"). If it can find the block, it sends the block back with format "BLOCK EXIST {no of bytes in block}\n{block}\n". If it can't find the block, it'll still send a block back, but with an ID of -1.
+        * Another is to retrieve the entire chain (request format of "GET-CHAIN\n"). It iterates through the entire chain, sending one block at a time (with the blockchain lock held) with format "BLOCK EXIST {no of bytes in block}\n{block}\n". Once it iterates through the chain, it'll send a dummy block with an ID of -1 to indicate the end of the chain.
 
     * After this request is handled, the connection is torn down and the thread goes back to listening for new connections, and only stops when it receives a shutdown signal.
 
@@ -66,9 +66,9 @@ The peer will maintain a few different threads:
 
     * If it is a valid block, then it'll check whether it is a valid block to add to the chain (e.g. id is the next expected one, prev hash matches hash of latest block of the chain, etc.)
 
-    * If it is a valid block but the incoming block's id is greater than the next expected ID, then this is a potential fork.
+    * If it is a valid block, can't be added to the chain (e.g. prev hash field doesn't match), and the incoming block's id is greater than or equal to the next expected ID, then this is a potential fork we need to resolve.
         * Requests list of nodes from the tracker
-        * Requests every node from the peer using the GET-BLOCK request type. It starts from ID 0, and keeps on requesting the next ID until it reaches the end of a chain (a block with ID -1). It then validates the chain, and if it is a valid chain, then the peer replaces its chain with the new chain.
+        * Requests every node from the peer using the GET-CHAIN request type. It will keep on receiving blocks from the peer until it hits the dummy block with ID -1 or if it finds that the chain sent from the peer is not a valid chain.
 
     * For invalid blocks or blocks where the id is less than the next expected ID, then discard the block.
 
