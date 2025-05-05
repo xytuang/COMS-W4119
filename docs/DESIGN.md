@@ -9,12 +9,12 @@
 
 * When a peer connects to the tracker, it will spin up a new thread dedicated to the peer's connection since it will need to maintain multiple peer connections at once.
     * Adds this peer to some global list
-    * At thread initialization, the tracker first waits for the peer to send a join message with the port the peer will be listening for other peers at. (e.g. JOIN\n{Port No.}\n)
+    * At thread initialization, the tracker first waits for the peer to send a join message with the port the peer will be listening for other peers at. (Format: JOIN\n{Port No.}\n)
     * It then waits for the peer to send an ID message containing the peer's unique ID. It then registers the peer by adding the peer connection info to a map keyed on the peer's unique ID.
     * Each thread listens for a request from the peer to send the list of nodes so that the peer can know who to broadcast any new mined blocks to.
-    * Message/serialization format: LIST\n{IPAddress},{Port} {IP Address},{Port} {IP Address},{Port}...\n
+    * Message/serialization format: "LIST\n{IPAddress},{Port} {IP Address},{Port} {IP Address},{Port}...\n"
     * The thread can also process GET-PEER requests to get a peer's listening port so other peers know how to connect.
-    * For GET-PEER requests, the tracker sends back the listening port with format PEER-PORT\n{Port No.}\n. If the tracker did not find the port, then it
+    * For GET-PEER requests, the tracker sends back the listening port with format "PEER-PORT\n{Port No.}\n". If the tracker did not find the port, then it
     sends back -1 as the port number.
     * This thread should also detect when a connection has closed -- done when a peer sends a LEAVE message or if it receives an empty payload from recv. When that happens it deletes the peer from the tracked peers and closes the thread.
 
@@ -62,9 +62,9 @@ The peer will maintain a few different threads:
 * Thread to pull blocks of the rcv buffer:
     * This thread continuously listens for blocks being put on the rcv buffer by the listening thread.
 
-    * Once it gets a block, then it'll check to see if the block is valid (e.g. hash is valid and transaction signature is correct).
+    * Once it gets a block, then it'll check to see if the block is valid (e.g. hash is valid, the difficulty is sufficient, and transaction signature is correct).
 
-    * If it is a valid block, then it'll check whether it is a valid block to add to the chain (e.g. id is the next expected one, prev hash matches hash of latest block of the chain, etc.)
+    * If it is a valid block, then it'll check whether it is a valid block to add to the chain (e.g. id is the next expected one, prev hash matches hash of latest block of the chain)
 
     * If it is a valid block, can't be added to the chain (e.g. prev hash field doesn't match), and the incoming block's id is greater than or equal to the next expected ID, then this is a potential fork we need to resolve.
         * Requests list of nodes from the tracker
