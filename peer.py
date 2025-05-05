@@ -204,10 +204,10 @@ class Peer:
 
                     # Hash matches and the block ID is the next expected one
                     if self.blockchain.can_add_block_to_chain(block):
-                        print(f"LOG poll_from_rcv_buffer: added block {block.id} to chain", file=self.log_file)
+                        print(f"LOG poll_from_rcv_buffer: adding block {block.id} to chain", file=self.log_file)
                         self.blockchain.add_block(block)
                         chain = [f"id: {blk.id}" for blk in self.blockchain.chain]
-                        print(f"LOG poll_from_rcv_buffer: current state of blockchain: {chain}", file=self.log_file)
+                        print(f"LOG poll_from_rcv_buffer: added block, current state of blockchain: {chain}", file=self.log_file)
                     
                     # If the incoming block is valid and has more work done, potential fork
                     elif _id > len(self.blockchain.chain):
@@ -321,15 +321,15 @@ class Peer:
                 print("LOG get_chain_from_peer: Found end of chain.", file=self.log_file)
                 break
             elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
-                print("LOG get_chain_from_peer: Added block", file=self.log_file)
+                print("LOG get_chain_from_peer: Added block to candidate chain", file=self.log_file)
                 peer_chain.add_block(block)
             else:
-                print("LOG get_chain_from_peer: found bad chain", file=self.log_file)
+                print("LOG get_chain_from_peer: Found bad chain", file=self.log_file)
                 bad_chain = True
                 break
 
         if not bad_chain:
-            print("LOG get_chain_from_peer: got chain with length", len(self.blockchain.chain), file=self.log_file)
+            print("LOG get_chain_from_peer: Got chain with length", len(peer_chain.chain), file=self.log_file)
 
         dest_socket.close()
 
@@ -406,10 +406,10 @@ class Peer:
                     break
 
                 elif self.debug or (block.is_valid(difficulty=self.difficulty) and peer_chain.can_add_block_to_chain(block)):
-                    print("LOG send_join_message: Added block", file=self.log_file)
+                    print("LOG send_join_message: Added block to candidate chain", file=self.log_file)
                     peer_chain.add_block(block)
                 else:
-                    print("LOG send_join_message: found bad chain", file=self.log_file)
+                    print("LOG send_join_message: Found bad chain", file=self.log_file)
                     bad_chain = True
                     break
 
