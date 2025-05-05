@@ -1,5 +1,7 @@
 For testing, we use difficulty 2 (e.g. nonce is valid when the first two digits of the hash are 0) for testing convenience.
 
+Logs for each node are in the respective folders, with format PEER_LISTENING_PORT_log.txt (e.g. "python3 app.py 50004 127.0.0.1 50000 2" would be stored in 50004_log.txt)
+
 =====Basic Test=====
 
 This test is manual and is just a simple test to make sure basic functionality works. All data is untampered with for this test, and all blocks are broadcast immediately after they are mined.
@@ -150,11 +152,12 @@ Start the tracker: python3 tracker.py 50000
 Peer 1: python3 app.py 50003 127.0.0.1 50000 2 config_empty.json basic_sim_test/primary.txt <br>
 Wait for a few seconds <br>
 Peer 2: python3 app.py 50002 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt <br>
+Wait for a few seconds <br>
 Peer 3: python3 app.py 50004 127.0.0.1 50000 2 config_empty.json basic_sim_test/secondary.txt <br>
 
 Main thing to check here is that the nodes end up with the same result. Inputting 4 and checking pollA for each of the nodes reveal that this is indeed the case case (detailed logs also included).
 
-Logs are in the basic_sim_test.
+Logs are in the basic_sim_test folder.
 
 =====Outgoing Data Tamper Tests=====
 
