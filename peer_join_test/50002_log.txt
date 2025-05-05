@@ -1,45 +1,31 @@
-LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': '9a97c1fb-00a9-4fff-b3ca-517627efb939', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
+LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': 'b646962e-c15b-40c6-a98b-6e4fe913759b', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
 LOG mine: found a new block 0
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 0
 LOG mine: current state of blockchain: ['id: 0']
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '9a97c1fb-00a9-4fff-b3ca-517627efb939', 'vote': 'a'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'b646962e-c15b-40c6-a98b-6e4fe913759b', 'vote': 'a'}
 LOG mine: found a new block 1
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 1
 LOG mine: current state of blockchain: ['id: 0', 'id: 1']
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '9a97c1fb-00a9-4fff-b3ca-517627efb939', 'vote': 'b'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'b646962e-c15b-40c6-a98b-6e4fe913759b', 'vote': 'b'}
 LOG mine: found a new block 2
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 2
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2']
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '9a97c1fb-00a9-4fff-b3ca-517627efb939', 'vote': 'c'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'b646962e-c15b-40c6-a98b-6e4fe913759b', 'vote': 'c'}
 LOG mine: found a new block 3
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 3
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3']
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 4
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '2']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '3']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '4']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '2']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '3']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '4']
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 4
 LOG process_peer_connections: Listening thread terminated

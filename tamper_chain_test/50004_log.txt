@@ -1,40 +1,45 @@
-LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': '524a858c-7384-41f4-b67e-d69371f3236b', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
+LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': 'ded2479e-84c2-4518-aaaf-4dd440139a20', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
 LOG mine: found a new block 0
 LOG mine: found valid block, adding to chain
+LOG mine: broadcasting block to all peers
 LOG mine: tampering with block (for testing)
 LOG mine: tamper type: chain
 LOG mine: skipping tampering with chain due to chain being too small
 LOG broadcast_block_to_all_peers: broadcasting block 0
 LOG mine: current state of blockchain: ['id: 0']
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '524a858c-7384-41f4-b67e-d69371f3236b', 'vote': 'a'}
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '524a858c-7384-41f4-b67e-d69371f3236b', 'vote': 'b'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ded2479e-84c2-4518-aaaf-4dd440139a20', 'vote': 'a'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ded2479e-84c2-4518-aaaf-4dd440139a20', 'vote': 'b'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ded2479e-84c2-4518-aaaf-4dd440139a20', 'vote': 'c'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ded2479e-84c2-4518-aaaf-4dd440139a20', 'vote': 'c'}
 LOG mine: found a new block 1
 LOG mine: found valid block, adding to chain
+LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 1
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '524a858c-7384-41f4-b67e-d69371f3236b', 'vote': 'c'}
 LOG mine: current state of blockchain: ['id: 0', 'id: 1']
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ded2479e-84c2-4518-aaaf-4dd440139a20', 'vote': 'c'}
 LOG mine: found a new block 2
 LOG mine: found valid block, adding to chain
+LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 2
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '524a858c-7384-41f4-b67e-d69371f3236b', 'vote': 'c'}
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2']
 LOG mine: found a new block 3
 LOG mine: found valid block, adding to chain
+LOG mine: broadcasting block to all peers
 LOG mine: tampering with block (for testing)
 LOG mine: tamper type: chain
 LOG broadcast_block_to_all_peers: broadcasting block 3
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '524a858c-7384-41f4-b67e-d69371f3236b', 'vote': 'c'}
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3']
 LOG mine: found a new block 4
 LOG mine: found valid block, adding to chain
+LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 4
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3', 'id: 4']
 LOG mine: found a new block 5
 LOG mine: found valid block, adding to chain
+LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 5
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3', 'id: 4', 'id: 5']
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 6
 LOG process_peer_connections: Listening thread terminated

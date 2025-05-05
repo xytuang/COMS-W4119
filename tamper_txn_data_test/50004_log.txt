@@ -1,71 +1,52 @@
-LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': '645acfe9-c9da-462d-b339-31acb965e4e4', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
+LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': '2f8637ae-4bfa-4e7d-ae8c-214fe86ab559', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
 LOG mine: found a new block 0
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 0
 LOG mine: current state of blockchain: ['id: 0']
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 1
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['BLOCK', '1386', 'NEW']
-LOG poll_from_rcv_buffer: received block data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x101388ad0>, 'peer_ip_addr': '127.0.0.1'}
+LOG process_peer_connections: found header ['BLOCK', '1299', 'NEW']
+LOG poll_from_rcv_buffer: received block (id=1) data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x103a7f950>, 'peer_ip_addr': '127.0.0.1'}
 LOG poll_from_rcv_buffer: received invalid block, discarding
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['BLOCK', '1361', 'NEW']
-LOG poll_from_rcv_buffer: received block data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x101388b90>, 'peer_ip_addr': '127.0.0.1'}
+LOG process_peer_connections: found header ['BLOCK', '1360', 'NEW']
+LOG poll_from_rcv_buffer: received block (id=2) data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x103a7f850>, 'peer_ip_addr': '127.0.0.1'}
 LOG poll_from_rcv_buffer: Detected fork (new id: 2, chain len: 1), resolving
 LOG get_port_from_peer_id: got port b'50003'
 LOG get_chain_from_peer: Connected to peer.
 LOG get_chain_from_peer: Requesting block ID 0
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 1
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['BLOCK', '1362', 'NEW']
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 2
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 3
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 4
+LOG process_peer_connections: found header ['BLOCK', '1361', 'NEW']
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
 LOG get_chain_from_peer: Found end of chain.
+LOG get_chain_from_peer: Got chain with length 4
 LOG poll_from_rcv_buffer: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3']
-LOG poll_from_rcv_buffer: received block data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x101388f50>, 'peer_ip_addr': '127.0.0.1'}
+LOG poll_from_rcv_buffer: received block (id=3) data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x103a7fbd0>, 'peer_ip_addr': '127.0.0.1'}
 LOG poll_from_rcv_buffer: Could not add block to chain and did not detect a fork, discarding
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['BLOCK', '1388', 'NEW']
-LOG poll_from_rcv_buffer: received block data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x1013891f0>, 'peer_ip_addr': '127.0.0.1'}
+LOG process_peer_connections: found header ['BLOCK', '1300', 'NEW']
+LOG poll_from_rcv_buffer: received block (id=4) data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x103a7fb50>, 'peer_ip_addr': '127.0.0.1'}
 LOG poll_from_rcv_buffer: received invalid block, discarding
 LOG process_peer_connections: Connected to new peer.
 LOG process_peer_connections: found header ['BLOCK', '1361', 'NEW']
-LOG poll_from_rcv_buffer: received block data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x101388cb0>, 'peer_ip_addr': '127.0.0.1'}
+LOG poll_from_rcv_buffer: received block (id=5) data:  {'type': 'BLOCK', 'tag': 'NEW', 'payload': <block.Block object at 0x103a7f850>, 'peer_ip_addr': '127.0.0.1'}
 LOG poll_from_rcv_buffer: Detected fork (new id: 5, chain len: 4), resolving
 LOG get_port_from_peer_id: got port b'50003'
 LOG get_chain_from_peer: Connected to peer.
 LOG get_chain_from_peer: Requesting block ID 0
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 1
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 2
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 3
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 4
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 5
-LOG get_chain_from_peer: Added block
-LOG get_chain_from_peer: Connected to peer.
-LOG get_chain_from_peer: Requesting block ID 6
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
+LOG get_chain_from_peer: Added block to candidate chain
 LOG get_chain_from_peer: Found end of chain.
+LOG get_chain_from_peer: Got chain with length 6
 LOG poll_from_rcv_buffer: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3', 'id: 4', 'id: 5']
 LOG process_peer_connections: Listening thread terminated

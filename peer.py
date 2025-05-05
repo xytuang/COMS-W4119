@@ -160,13 +160,17 @@ class Peer:
                         print("LOG process_peer_connections: finished sending chain of length", len(self.blockchain.chain), file=self.log_file)
                 else:
                     print("LOG process_peer_connections: Unsupported header type", file=self.log_file)
-
-                peer_socket.close()
+                
             except socket.timeout:
                 # if just a timeout, continue and check check shutdown flag
                 continue
             except Exception as e:
                 print(f"LOG process_peer_connections: Error in process_peer_connections (may be expected if closing): {e}", file=self.log_file)
+            finally:
+                try:
+                    peer_socket.close()
+                except:
+                    pass
         print("LOG process_peer_connections: Listening thread terminated", file=self.log_file)
         
     def poll_from_rcv_buffer(self):

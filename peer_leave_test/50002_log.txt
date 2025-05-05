@@ -1,8 +1,10 @@
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 0
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': 'c7d8b6c3-41b5-4e84-8c07-cde00a59a73f', 'poll_name': 'pollA', 'options': ['a', 'b']}
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 0
+LOG create_txn: submitted mining job {'transaction_type': 'create_poll', 'poll_id': '51fd23c4-3a52-4955-8fb1-4f61d225a3d2', 'poll_name': 'pollA', 'options': ['a', 'b', 'c']}
 LOG mine: found a new block 0
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers

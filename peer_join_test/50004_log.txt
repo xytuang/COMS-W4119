@@ -1,31 +1,15 @@
 LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 0
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 1
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 2
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 3
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 4
+LOG send_join_message: Requesting chain
+LOG send_join_message: Added block to candidate chain
+LOG send_join_message: Added block to candidate chain
+LOG send_join_message: Added block to candidate chain
+LOG send_join_message: Added block to candidate chain
 LOG send_join_message: Found end of chain.
 LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 0
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 1
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 2
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 3
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 4
+LOG send_join_message: Requesting chain
+LOG send_join_message: Added block to candidate chain
+LOG send_join_message: Added block to candidate chain
+LOG send_join_message: Added block to candidate chain
+LOG send_join_message: Added block to candidate chain
 LOG send_join_message: Found end of chain.
 LOG process_peer_connections: Listening thread terminated

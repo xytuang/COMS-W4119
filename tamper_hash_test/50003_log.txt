@@ -1,34 +1,27 @@
 LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 0
-LOG send_join_message: Added block
-LOG send_join_message: Connected to peer.
-LOG send_join_message: Requesting block ID 1
+LOG send_join_message: Requesting chain
+LOG send_join_message: Added block to candidate chain
 LOG send_join_message: Found end of chain.
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '3c988efc-c77c-4d82-82e0-88225f0e0339', 'vote': 'a'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ba848a1d-2564-4139-ba9f-cc3fd5246ba9', 'vote': 'a'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ba848a1d-2564-4139-ba9f-cc3fd5246ba9', 'vote': 'b'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ba848a1d-2564-4139-ba9f-cc3fd5246ba9', 'vote': 'c'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ba848a1d-2564-4139-ba9f-cc3fd5246ba9', 'vote': 'b'}
 LOG mine: found a new block 1
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG mine: tampering with block (for testing)
 LOG mine: tamper type: hash
 LOG broadcast_block_to_all_peers: broadcasting block 1
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '3c988efc-c77c-4d82-82e0-88225f0e0339', 'vote': 'b'}
 LOG mine: current state of blockchain: ['id: 0', 'id: 1']
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '3c988efc-c77c-4d82-82e0-88225f0e0339', 'vote': 'c'}
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '3c988efc-c77c-4d82-82e0-88225f0e0339', 'vote': 'b'}
-LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': '3c988efc-c77c-4d82-82e0-88225f0e0339', 'vote': 'b'}
+LOG create_txn: submitted mining job {'transaction_type': 'vote', 'poll_id': 'ba848a1d-2564-4139-ba9f-cc3fd5246ba9', 'vote': 'b'}
 LOG mine: found a new block 2
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 2
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2']
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '2']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '3']
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 3
 LOG mine: found a new block 3
 LOG mine: found valid block, adding to chain
 LOG mine: broadcasting block to all peers
@@ -47,17 +40,6 @@ LOG mine: broadcasting block to all peers
 LOG broadcast_block_to_all_peers: broadcasting block 5
 LOG mine: current state of blockchain: ['id: 0', 'id: 1', 'id: 2', 'id: 3', 'id: 4', 'id: 5']
 LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '0']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '1']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '2']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '3']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '4']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '5']
-LOG process_peer_connections: Connected to new peer.
-LOG process_peer_connections: found header ['GET-BLOCK', '6']
+LOG process_peer_connections: found header ['GET-CHAIN']
+LOG process_peer_connections: finished sending chain of length 6
 LOG process_peer_connections: Listening thread terminated
